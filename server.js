@@ -10,6 +10,7 @@ const PORTA = Number(process.env.PORT || 3000);
 const DADOS_DIR = process.env.DADOS_DIR || path.join(__dirname, 'dados');
 const ARQ = path.join(DADOS_DIR, 'checklists.json');
 const SENHA = process.env.SENHA || '';
+const SENHA_ADMIN = process.env.SENHA_ADMIN || '';
 const COLECOES = new Set(['config', 'checklists']);
 const LIMITE_CORPO = 1024 * 1024;
 
@@ -59,18 +60,46 @@ function avisarMudanca() {
 }
 setInterval(() => { for (const res of ouvintes) res.write(': ping\n\n'); }, 25000);
 
-// ---------- senha da equipe ----------
-const ficha = SENHA ? crypto.createHmac('sha256', SENHA).update('checklist-equipe').digest('hex') : '';
+// ---------- senhas ----------
+// SENHA = equipe (marca itens e escreve observações). SENHA_ADMIN = administrador (pode tudo).
+// Sem SENHA_ADMIN, a SENHA continua dando acesso total, como antes.
+const fichaDe = (senha, papel) => crypto.createHmac('sha256', senha).update('checklist-' + papel).digest('hex');
+const fichaEquipe = SENHA ? fichaDe(SENHA, 'equipe') : '';
+const fichaAdmin = SENHA_ADMIN ? fichaDe(SENHA_ADMIN, 'admin') : '';
 const tentativas = new Map();
 function cookies(req) {
   const out = {};
   (req.headers.cookie || '').split(';').forEach(p => { const i = p.indexOf('='); if (i > 0) out[p.slice(0, i).trim()] = decodeURIComponent(p.slice(i + 1).trim()); });
   return out;
 }
-function autorizado(req) {
-  if (!SENHA) return true;
+function igual(a, b) { return !!b && a.length === b.length && crypto.timingSafeEqual(Buffer.from(a), Buffer.from(b)); }
+function papelDe(req) {
+  if (!SENHA && !SENHA_ADMIN) return 'admin';
   const c = cookies(req).ck_sessao || '';
-  return c.length === ficha.length && crypto.timingSafeEqual(Buffer.from(c), Buffer.from(ficha));
+  if (igual(c, fichaAdmin)) return 'admin';
+  if (igual(c, fichaEquipe)) return SENHA_ADMIN ? 'equipe' : 'admin';
+  return null;
+}
+// A equipe só pode mudar a situação (s) e a observação (obs) de itens que já existem, e as observações gerais
+function permitidoEquipe(col, id, metodo, corpo) {
+  if (col !== 'checklists' || metodo !== 'PATCH') return false;
+  const doc = dados.checklists && dados.checklists[id];
+  if (!doc) return false;
+  const ids = new Set();
+  (doc.secoes || []).forEach(s => (s.grupos || []).forEach(g => (g.itens || []).forEach(i => ids.add(i.id))));
+  for (const k of Object.keys(corpo)) {
+    if (k === 'obsGeral') { if (typeof corpo.obsGeral !== 'string' || corpo.obsGeral.length > 5000) return false; continue; }
+    if (k !== 'estado' || !corpo.estado || typeof corpo.estado !== 'object' || Array.isArray(corpo.estado)) return false;
+    for (const [iid, v] of Object.entries(corpo.estado)) {
+      if (!ids.has(iid) || !v || typeof v !== 'object' || Array.isArray(v)) return false;
+      for (const [f, x] of Object.entries(v)) {
+        if (f === 's') { if (!['', 'ok', 'nao', 'na'].includes(x)) return false; }
+        else if (f === 'obs') { if (typeof x !== 'string' || x.length > 1000) return false; }
+        else return false;
+      }
+    }
+  }
+  return true;
 }
 function ipDe(req) { return (req.headers['x-forwarded-for'] || '').split(',')[0].trim() || req.socket.remoteAddress; }
 function bloqueado(ip) {
@@ -119,18 +148,27 @@ const servidor = http.createServer(async (req, res) => {
       const ip = ipDe(req);
       if (bloqueado(ip)) return json(res, 429, { erro: 'Muitas tentativas. Espere 10 minutos.' });
       const corpo = await lerCorpo(req);
-      if (!SENHA || (corpo && corpo.senha === SENHA)) {
+      const senha = corpo && typeof corpo.senha === 'string' ? corpo.senha : '';
+      let ficha = '', papel = '';
+      if (SENHA_ADMIN && senha === SENHA_ADMIN) { ficha = fichaAdmin; papel = 'admin'; }
+      else if (SENHA && senha === SENHA) { ficha = fichaEquipe; papel = SENHA_ADMIN ? 'equipe' : 'admin'; }
+      if (ficha) {
         const seguro = (req.headers['x-forwarded-proto'] || '').includes('https') ? '; Secure' : '';
         res.setHeader('set-cookie', `ck_sessao=${ficha}; Path=/; HttpOnly; SameSite=Lax; Max-Age=${180 * 86400}${seguro}`);
-        return json(res, 200, { ok: true });
+        return json(res, 200, { ok: true, papel });
       }
       tentativas.get(ip).push(Date.now());
       return json(res, 401, { erro: 'Senha errada' });
     }
+    if (p === '/api/sair' && req.method === 'POST') {
+      res.setHeader('set-cookie', 'ck_sessao=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0');
+      return json(res, 200, { ok: true });
+    }
 
-    if (p.startsWith('/api/') && !autorizado(req)) return json(res, 401, { erro: 'Entre com a senha da equipe' });
+    const papel = papelDe(req);
+    if (p.startsWith('/api/') && !papel) return json(res, 401, { erro: 'Entre com a senha da equipe' });
 
-    if (p === '/api/dados' && req.method === 'GET') return json(res, 200, { ...dados, versao });
+    if (p === '/api/dados' && req.method === 'GET') return json(res, 200, { ...dados, versao, papel });
 
     if (p === '/api/eventos') {
       res.writeHead(200, { 'content-type': 'text/event-stream', 'cache-control': 'no-cache', connection: 'keep-alive', 'x-accel-buffering': 'no' });
@@ -145,9 +183,13 @@ const servidor = http.createServer(async (req, res) => {
       const [, col, id] = m;
       if (col === 'config' && id !== 'modelo') return json(res, 400, { erro: 'Documento inválido' });
       dados[col] = dados[col] || {};
-      if (req.method === 'DELETE') { delete dados[col][id]; salvar(); avisarMudanca(); return json(res, 204); }
+      if (req.method === 'DELETE') {
+        if (papel !== 'admin') return json(res, 403, { erro: 'Só o administrador pode excluir' });
+        delete dados[col][id]; salvar(); avisarMudanca(); return json(res, 204);
+      }
       const corpo = await lerCorpo(req);
       if (!corpo || typeof corpo !== 'object' || Array.isArray(corpo)) return json(res, 400, { erro: 'Corpo inválido' });
+      if (papel !== 'admin' && !permitidoEquipe(col, id, req.method, corpo)) return json(res, 403, { erro: 'Esta senha só permite marcar itens e escrever observações' });
       if (req.method === 'PUT') dados[col][id] = corpo;
       else if (req.method === 'PATCH') {
         if (!dados[col][id]) return json(res, 400, { erro: 'Documento não existe' });
@@ -164,4 +206,4 @@ const servidor = http.createServer(async (req, res) => {
   }
 });
 
-servidor.listen(PORTA, () => console.log(`Checklist no ar na porta ${PORTA}${SENHA ? ' (com senha)' : ' (SEM senha: defina SENHA)'}`));
+servidor.listen(PORTA, () => console.log(`Checklist no ar na porta ${PORTA} · senha da equipe: ${SENHA ? 'sim' : 'NÃO'} · senha de administrador: ${SENHA_ADMIN ? 'sim' : 'NÃO'}`));

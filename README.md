@@ -9,7 +9,8 @@ Checklist de pré-show: modelo fixo editável e um checklist por show, com statu
 ## Coolify
 - Build pack: Dockerfile. Porta: 3000.
 - Volume persistente montado em `/app/dados` (sem ele os checklists somem a cada deploy).
-- Variável `SENHA`: senha da equipe para entrar.
+- Variável `SENHA`: senha da equipe. Só marca itens (Feito, Não feito, N/A) e escreve observações.
+- Variável `SENHA_ADMIN`: senha de administrador. Cria e exclui checklists, edita itens e o modelo, marca como concluído. Sem ela, a `SENHA` continua dando acesso total.
 
 ## Rodar no computador
-`SENHA=teste node server.js` e abrir http://localhost:3000
+`SENHA=equipe SENHA_ADMIN=admin node server.js` e abrir http://localhost:3000

@@ -220,6 +220,7 @@ function toast(msg){ toastEl.textContent = msg; toastEl.hidden = false; clearTim
 function errMsg(e){
   const c = e && e.code;
   if (c === 'invalid_argument') return 'Você não tem permissão para alterar este checklist.';
+  if (c === 'proibido') return 'Esta senha só permite marcar os itens e escrever observações.';
   if (c === 'quota_exceeded') return 'O espaço de dados ficou cheio. Exclua checklists antigos.';
   if (c === 'resource_exhausted') return 'Muitas alterações seguidas. Espere um instante e tente de novo.';
   return 'Não foi possível salvar. Verifique a conexão e tente de novo.';
@@ -245,6 +246,13 @@ function contar(ck){
   return c;
 }
 const atual = () => (S.lista || []).find(c => c.id === S.openId);
+// A senha da equipe só marca itens e escreve observações; criar, editar e excluir é do administrador
+const podeMudar = () => canWrite && S.papel !== 'equipe';
+function acessoInfo(){
+  if (!servidor || !S.papel) return '';
+  if (S.papel === 'equipe') return `<p class="small muted" style="margin:0">Acesso da equipe: marcar itens e escrever observações. <button class="link" data-a="pedir-admin">Entrar como administrador</button></p>`;
+  return `<p class="small muted" style="margin:0">Acesso de administrador. <button class="link" data-a="sair">Sair</button></p>`;
+}
 
 // ---------- render ----------
 // Não troca a tela no meio de um toque, senão o toque se perde
@@ -278,7 +286,7 @@ function avisoCarga(){
 
 function viewLista(){
   const modeloVazio = S.modelo !== undefined && !itensDe(S.modelo?.secoes).length;
-  const form = canWrite ? `
+  const form = podeMudar() ? `
   <section class="panel panel-pad" aria-labelledby="h-novo">
     <div class="head" style="margin-bottom:12px"><h2 id="h-novo">Novo checklist de pré-show</h2>
       <span class="muted small">Cria uma cópia do modelo fixo. O que você mudar no show não altera o modelo.</span></div>
@@ -292,7 +300,9 @@ function viewLista(){
   </section>` : '';
   let lista;
   if (S.lista === undefined) lista = `<div class="empty">Carregando…</div>`;
-  else if (!S.lista.length) lista = `<div class="empty">Nenhum checklist ainda. Preencha o nome do show acima e toque em <b>Criar checklist</b>.</div>`;
+  else if (!S.lista.length) lista = podeMudar()
+    ? `<div class="empty">Nenhum checklist ainda. Preencha o nome do show acima e toque em <b>Criar checklist</b>.</div>`
+    : `<div class="empty">Nenhum checklist ainda. O administrador cria o checklist de cada show.</div>`;
   else lista = `<div class="shows">${S.lista.map(ck => {
     const c = contar(ck), t = c.total || 1;
     return `<button class="show" data-a="abrir" data-id="${esc(ck.id)}">
@@ -305,7 +315,8 @@ function viewLista(){
   <section aria-labelledby="h-shows" style="display:flex;flex-direction:column;gap:10px">
     <h2 id="h-shows">Shows</h2>
     <div class="panel">${lista}</div>
-  </section>`;
+  </section>
+  ${acessoInfo()}`;
 }
 
 function itemVisivel(ck, it){
@@ -318,6 +329,7 @@ function itemVisivel(ck, it){
 function viewCheck(ck){
   const c = contar(ck);
   const ro = !canWrite;
+  const adm = podeMudar();
   const topo = `
   <div class="head">
     <button class="link" data-a="go-lista">← Todos os shows</button>
@@ -336,12 +348,12 @@ function viewCheck(ck){
       <div class="filters" role="group" aria-label="Filtrar itens">
         ${[['todos','Todos'],['pend','Pendentes'],['obs','Com observação']].map(([k,l]) => `<button class="fchip" data-a="filtro" data-v="${k}" aria-pressed="${S.filtro===k}">${l}</button>`).join('')}
       </div>
-      ${ro ? '' : `<button class="btn ${S.editando ? 'on' : ''}" data-a="editar">${S.editando ? 'Concluir edição' : 'Editar itens'}</button>`}
+      ${adm ? `<button class="btn ${S.editando ? 'on' : ''}" data-a="editar">${S.editando ? 'Concluir edição' : 'Editar itens'}</button>` : ''}
     </div>
   </div>
   <div class="legend"><span><b style="background:var(--ok)">✓</b>Feito</span><span><b style="background:var(--no)">✗</b>Não feito</span><span><b style="background:var(--na)">N/A</b>Não se aplica neste show</span><span>Toque de novo para desmarcar.</span></div>`;
 
-  const corpo = S.editando && !ro ? editor(ck.secoes, 'check') : (ck.secoes || []).map(sec => {
+  const corpo = S.editando && adm ? editor(ck.secoes, 'check') : (ck.secoes || []).map(sec => {
     const grupos = (sec.grupos || []).map(g => {
       const its = (g.itens || []).map((it, idx) => ({ it, idx })).filter(x => itemVisivel(ck, x.it));
       if (!its.length && S.filtro !== 'todos') return '';
@@ -358,11 +370,11 @@ function viewCheck(ck){
     <label class="fld">Observações gerais do show
       <textarea id="obs-geral" ${ro ? 'readonly' : ''} placeholder="Ex.: cliente pediu balcão extra no nível 1">${esc(val('obs-geral', ck.obsGeral))}</textarea></label>
     <div class="row">
-      ${ro ? '' : `<button class="btn ${ck.finalizado ? '' : 'pri'}" data-a="finalizar">${ck.finalizado ? 'Reabrir checklist' : 'Marcar como concluído'}</button>`}
+      ${adm ? `<button class="btn ${ck.finalizado ? '' : 'pri'}" data-a="finalizar">${ck.finalizado ? 'Reabrir checklist' : 'Marcar como concluído'}</button>` : ''}
       <button class="btn" data-a="copiar">Copiar resumo</button>
       ${dl ? `<button class="btn" data-a="baixar">Baixar para imprimir</button>` : ''}
       <span class="grow"></span>
-      ${ro ? '' : (S.confirm === 'del-ck'
+      ${!adm ? '' : (S.confirm === 'del-ck'
         ? `<span class="small">Excluir de vez?</span><button class="btn danger" data-a="del-ck">Sim, excluir</button><button class="btn ghost" data-a="cancel">Não</button>`
         : `<button class="btn ghost danger" data-a="del-ck">Excluir checklist</button>`)}
     </div>
@@ -448,8 +460,14 @@ function viewModelo(){
   if (S.modelo === undefined) return `${avisoCarga()}<div class="panel empty">Carregando modelo…</div>`;
   const intro = `<div class="head"><h1>Modelo fixo</h1>
     <p class="muted" style="margin:0;max-width:62ch">Estes são os itens que entram em todo checklist novo. Mudanças aqui valem para os próximos shows e não mexem nos checklists já criados. A nota fixa aparece em vermelho, como no papel.</p></div>`;
-  if (!canWrite) return `${intro}<div class="notice">Você pode ver o modelo, mas não tem permissão para editar.</div>`;
+  if (!podeMudar()) return `${intro}<div class="notice">Você pode ver o modelo, mas só o administrador pode mudar os itens.</div>${modeloLeitura()}${acessoInfo()}`;
   return `${avisoCarga()}${intro}${editor(S.modelo?.secoes || [], 'modelo')}`;
+}
+
+function modeloLeitura(){
+  return (S.modelo?.secoes || []).map(sec => `<section class="sec"><div class="sec-h">${esc(sec.titulo)}</div>${(sec.grupos || []).map(g => `
+    ${g.titulo ? `<div class="grp-h">${esc(g.titulo)}<span class="cnt">${(g.itens || []).length} itens</span></div>` : ''}
+    ${(g.itens || []).map((it, i) => `<div class="item"><span class="num">${i + 1}</span><div class="txt" style="padding-top:0">${esc(it.texto)} ${it.nota ? `<span class="nota">${esc(it.nota)}</span>` : ''}</div></div>`).join('')}`).join('')}</section>`).join('');
 }
 
 // ---------- estrutura (modelo ou show) ----------
@@ -478,6 +496,9 @@ app.addEventListener('click', ev => {
   if (a !== 'del-sec' && a !== 'del-grp' && a !== 'del-item' && a !== 'del-ck' && S.confirm) S.confirm = null;
   switch (a){
     case 'go-lista': irPara('lista'); break;
+    case 'pedir-admin': S.pedirSenha = true; render(); { const el = document.getElementById('senha'); if (el) el.focus(); } break;
+    case 'cancel-senha': S.pedirSenha = false; render(); break;
+    case 'sair': servidor.sair().finally(() => location.reload()); break;
     case 'abrir': S.openId = b.dataset.id; S.editando = false; S.filtro = 'todos'; S.copyText = null; S.obsAbertas.clear(); irPara('check'); break;
     case 'filtro': S.filtro = b.dataset.v; render(); break;
     case 'editar': S.editando = !S.editando; S.addForm = null; render(); break;
@@ -659,6 +680,7 @@ function dbDoServidor(){
     if (r.status === 401) { S.pedirSenha = true; render(); throw { code: 'sem_senha' }; }
     if (r.status === 413) throw { code: 'quota_exceeded' };
     if (r.status === 400) throw { code: 'invalid_argument' };
+    if (r.status === 403) throw { code: 'proibido' };
     if (!r.ok) throw { code: 'unavailable' };
     return r.status === 204 ? null : r.json();
   }
@@ -666,7 +688,9 @@ function dbDoServidor(){
     if (pend) { querRecarregar = true; return; }
     const d = await api('GET', 'api/dados');
     if (pend) { querRecarregar = true; return; }
-    base = { config: d.config || {}, checklists: d.checklists || {} }; carregou = true; avisar();
+    base = { config: d.config || {}, checklists: d.checklists || {} }; carregou = true;
+    if (S.papel !== (d.papel || null)) { S.papel = d.papel || null; S.editando = false; render(); }
+    avisar();
   }
   function escrever(metodo, col, id, corpo, local){
     local(); avisar(); pend++;
@@ -699,7 +723,7 @@ function dbDoServidor(){
     document.addEventListener('visibilitychange', () => { if (!document.hidden) recarregar().catch(() => {}); });
     setInterval(() => { if (!document.hidden) recarregar().catch(() => {}); }, 60000);
   }
-  return { doc, collection, recarregar, ligarAoVivo, entrar: senha => api('POST', 'api/entrar', { senha }) };
+  return { doc, collection, recarregar, ligarAoVivo, entrar: senha => api('POST', 'api/entrar', { senha }), sair: () => api('POST', 'api/sair') };
 }
 const baixarNoNavegador = {
   save({ filename, data }){
@@ -712,12 +736,15 @@ const baixarNoNavegador = {
 };
 function viewSenha(){
   return `<section class="panel panel-pad" style="max-width:420px;margin:24px auto;display:flex;flex-direction:column;gap:12px">
-    <h2>Entrar</h2>
-    <p class="muted" style="margin:0">Digite a senha da equipe para ver e marcar os checklists.</p>
+    <h2>${S.papel === 'equipe' ? 'Acesso de administrador' : 'Entrar'}</h2>
+    <p class="muted" style="margin:0">${S.papel === 'equipe'
+      ? 'Digite a senha de administrador para criar checklists, editar itens e mudar o modelo.'
+      : 'Digite a senha da equipe para ver e marcar os checklists. Com a senha de administrador, você também cria checklists e edita os itens.'}</p>
     <form id="f-senha" class="row" style="align-items:flex-end">
       <label class="fld">Senha<input type="password" id="senha" autocomplete="current-password" required></label>
       <button class="btn pri" type="submit">Entrar</button>
     </form>
+    ${S.papel ? `<div><button class="link" data-a="cancel-senha">← Voltar</button></div>` : ''}
   </section>`;
 }
 app.addEventListener('submit', ev => {
