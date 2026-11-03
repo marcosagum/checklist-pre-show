@@ -1,0 +1,750 @@
+<title>Checklist Operacional Farmasi Arena</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Barlow:wght@400;500;600&display=swap">
+<style>
+/* Layout: prancheta de operação — faixa grafite como o cabeçalho do PDF, linhas de item largas para o dedo, status à direita */
+:root{
+  --paper:#f3f3f1; --card:#ffffff; --ink:#1c1e21; --muted:#686c73; --line:#dededb; --band:#4f5257; --band-ink:#ffffff;
+  --brand:#e2001a; --note:#d0101f; --note-bg:#fdeaec;
+  --ok:#1b8f4c; --ok-bg:#e3f4ea; --no:#c8261b; --no-bg:#fbe5e2; --na:#b86a00; --na-bg:#fdf0da;
+  --chip:#ececea; --focus:#2f6fde;
+  --f-display:"Barlow Condensed","Arial Narrow",Arial,sans-serif;
+  --f-body:"Barlow",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --paper:#131416; --card:#1c1e21; --ink:#ececea; --muted:#9a9ea6; --line:#2e3135; --band:#2a2c30; --band-ink:#f2f2f2;
+  --brand:#ff3b4f; --note:#ff6b73; --note-bg:#3a1519;
+  --ok:#43c97c; --ok-bg:#163525; --no:#ff6e60; --no-bg:#3b1a17; --na:#f2a43a; --na-bg:#3a2a12;
+  --chip:#26292d; --focus:#7aa5ff; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --paper:#131416; --card:#1c1e21; --ink:#ececea; --muted:#9a9ea6; --line:#2e3135; --band:#2a2c30; --band-ink:#f2f2f2;
+  --brand:#ff3b4f; --note:#ff6b73; --note-bg:#3a1519;
+  --ok:#43c97c; --ok-bg:#163525; --no:#ff6e60; --no-bg:#3b1a17; --na:#f2a43a; --na-bg:#3a2a12;
+  --chip:#26292d; --focus:#7aa5ff; color-scheme:dark}
+
+body{background:var(--paper);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.4}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--band)}
+*{box-sizing:border-box}
+button,input,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+
+.band{background:var(--band);color:var(--band-ink);padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.band-in{max-width:880px;margin:0 auto;display:flex;align-items:center;gap:12px;padding-block:14px}
+.mark{width:40px;height:40px;flex:none;display:block;border-radius:4px}
+.brand-t{font-family:var(--f-display);font-weight:700;font-size:20px;letter-spacing:.03em;text-transform:uppercase;line-height:1.05}
+.brand-s{font-size:12px;opacity:.75;letter-spacing:.06em;text-transform:uppercase}
+.tabs{margin-left:auto;display:flex;gap:4px}
+.tab{background:transparent;border:1px solid transparent;color:var(--band-ink);padding:6px 12px;border-radius:4px;font-weight:600;font-size:14px;opacity:.75}
+.tab[aria-current="page"]{opacity:1;border-color:rgba(255,255,255,.35);background:rgba(255,255,255,.08)}
+
+main{padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:20px 80px}
+.wrap{max-width:880px;margin:0 auto;display:flex;flex-direction:column;gap:20px}
+h1,h2,h3{font-family:var(--f-display);font-weight:700;margin:0;text-wrap:balance;letter-spacing:.01em}
+h1{font-size:30px;line-height:1.05}
+h2{font-size:20px;text-transform:uppercase;letter-spacing:.04em}
+.muted{color:var(--muted)}
+.small{font-size:13px}
+
+.panel{background:var(--card);border:1px solid var(--line);border-radius:6px}
+.panel-pad{padding:16px}
+.row{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.grow{flex:1 1 auto;min-width:0}
+
+label.fld{display:flex;flex-direction:column;gap:4px;font-size:12px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--muted);flex:1 1 180px;min-width:0}
+input[type=text],input[type=date],textarea{background:var(--paper);border:1px solid var(--line);border-radius:4px;padding:9px 10px;font-size:15px;width:100%;min-width:0;text-transform:none;letter-spacing:0;font-weight:400;color:var(--ink)}
+textarea{resize:vertical;min-height:70px}
+
+.btn{border:1px solid var(--line);background:var(--card);border-radius:4px;padding:9px 14px;font-weight:600;font-size:14px;display:inline-flex;align-items:center;gap:6px;min-height:40px}
+.btn:hover{border-color:var(--muted)}
+.btn.pri{background:var(--brand);border-color:var(--brand);color:#fff}
+.btn.ghost{background:transparent}
+.btn.danger{color:var(--no)}
+.btn.on{background:var(--ink);color:var(--card);border-color:var(--ink)}
+.btn[disabled]{opacity:.5;cursor:not-allowed}
+.link{background:none;border:none;padding:4px 0;color:var(--muted);font-weight:600;font-size:14px}
+.link:hover{color:var(--ink)}
+
+/* Lista de shows */
+.shows{display:flex;flex-direction:column}
+.show{display:grid;grid-template-columns:1fr auto;gap:6px 16px;align-items:center;padding:14px 16px;border-top:1px solid var(--line);background:none;border-left:0;border-right:0;border-bottom:0;text-align:left;width:100%}
+.show:first-child{border-top:0}
+.show:hover{background:var(--paper)}
+.show-t{font-weight:600;font-size:17px;min-width:0;overflow-wrap:anywhere}
+.show-m{font-size:13px;color:var(--muted);grid-column:1}
+.show-p{grid-column:2;grid-row:1 / span 2;text-align:right;font-variant-numeric:tabular-nums;font-family:var(--f-display);font-size:22px;font-weight:700}
+.bar{height:6px;background:var(--chip);border-radius:3px;overflow:hidden;display:flex;grid-column:1 / -1}
+.bar i{display:block;height:100%}
+.bar .b-ok{background:var(--ok)} .bar .b-na{background:var(--na)} .bar .b-no{background:var(--no)}
+.chip{display:inline-block;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:2px 7px;border-radius:3px;background:var(--chip);color:var(--muted);vertical-align:middle}
+.chip.done{background:var(--ok-bg);color:var(--ok)}
+
+/* Checklist */
+.head{display:flex;flex-direction:column;gap:6px}
+.sticky{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--paper);padding-block:10px;margin-block:-10px;border-bottom:1px solid var(--line)}
+.sum{display:flex;flex-wrap:wrap;gap:6px 14px;align-items:center;font-variant-numeric:tabular-nums;font-size:14px}
+.sum b{font-family:var(--f-display);font-size:18px}
+.k-ok{color:var(--ok)} .k-no{color:var(--no)} .k-na{color:var(--na)}
+.pct{font-family:var(--f-display);font-weight:700;font-size:26px;margin-left:auto}
+.filters{display:flex;flex-wrap:wrap;gap:6px}
+.fchip{border:1px solid var(--line);background:var(--card);border-radius:20px;padding:5px 12px;font-size:13px;font-weight:600}
+.fchip[aria-pressed="true"]{background:var(--ink);color:var(--card);border-color:var(--ink)}
+
+.sec-h{background:var(--band);color:var(--band-ink);padding:9px 16px;border-radius:6px 6px 0 0;font-family:var(--f-display);font-weight:700;font-size:18px;letter-spacing:.05em;text-transform:uppercase;display:flex;align-items:center;gap:8px}
+.grp-h{background:var(--chip);padding:7px 16px;font-weight:700;font-size:14px;display:flex;align-items:center;gap:8px;border-top:1px solid var(--line)}
+.grp-h .cnt{margin-left:auto;font-weight:600;color:var(--muted);font-variant-numeric:tabular-nums;font-size:13px}
+.sec{background:var(--card);border:1px solid var(--line);border-radius:6px;overflow:hidden}
+.sec .sec-h{border-radius:0}
+
+.item{display:grid;grid-template-columns:30px minmax(0,1fr) auto;gap:4px 10px;padding:10px 12px 10px 8px;border-top:1px solid var(--line);align-items:start;border-left:4px solid transparent}
+.item.s-ok{border-left-color:var(--ok)} .item.s-nao{border-left-color:var(--no)} .item.s-na{border-left-color:var(--na)}
+.num{font-variant-numeric:tabular-nums;color:var(--muted);font-size:13px;text-align:right;padding-top:9px}
+.txt{padding-top:7px;overflow-wrap:anywhere}
+.nota{color:var(--note)}
+.obs-t{color:var(--note);background:var(--note-bg);font-size:14px;margin-top:5px;overflow-wrap:anywhere;border:1px dashed var(--note);border-radius:4px;padding:4px 8px;text-align:left;display:inline-flex;align-items:center;gap:6px;max-width:100%}
+.obs-t:hover{border-style:solid}
+.obs-t svg{flex:none}
+.obs-in{margin-top:6px;color:var(--note);font-size:14px;padding:7px 9px}
+.acts{display:flex;gap:4px;align-items:center}
+.seg{display:flex;border:1px solid var(--line);border-radius:5px;overflow:hidden}
+.seg button{border:0;background:var(--card);min-width:44px;height:40px;font-weight:700;font-size:15px;color:var(--muted);border-left:1px solid var(--line)}
+.seg button:first-child{border-left:0}
+.seg button.na{font-size:12px}
+.seg button[aria-pressed="true"].ok{background:var(--ok);color:#fff}
+.seg button[aria-pressed="true"].nao{background:var(--no);color:#fff}
+.seg button[aria-pressed="true"].na{background:var(--na);color:#fff}
+.obs-b{border:1.5px solid var(--note);background:var(--note-bg);border-radius:20px;height:40px;padding:0 12px;font-size:13px;font-weight:700;color:var(--note);letter-spacing:.03em;display:inline-flex;align-items:center;justify-content:center;gap:5px;min-width:76px;box-shadow:0 1px 0 var(--line)}
+.obs-b:hover{background:var(--note);color:#fff}
+.obs-b.has{background:var(--note);color:#fff}
+.obs-b:active{transform:translateY(1px)}
+.ro .seg button,.ro .obs-b{cursor:default}
+
+/* Editor */
+.ed-item{display:grid;grid-template-columns:30px minmax(0,1fr) auto;gap:6px 10px;padding:10px 12px 10px 8px;border-top:1px solid var(--line);align-items:start}
+.ed-f{display:flex;flex-direction:column;gap:6px;min-width:0}
+.ed-f input.nota-in{color:var(--note);font-size:14px;padding:6px 9px}
+.ed-btns{display:flex;gap:4px;flex-wrap:wrap;justify-content:flex-end}
+.ib{border:1px solid var(--line);background:var(--card);border-radius:4px;min-width:36px;height:36px;font-weight:700;color:var(--muted);padding:0 8px;font-size:13px}
+.ib:hover{color:var(--ink);border-color:var(--muted)}
+.ib.del{color:var(--no)}
+.ib.confirm{background:var(--no);color:#fff;border-color:var(--no)}
+.sec-h input,.grp-h input{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.25);color:inherit;font-family:inherit;font-size:inherit;font-weight:inherit;letter-spacing:inherit;text-transform:inherit;padding:4px 8px;flex:1 1 auto;min-width:0}
+.grp-h input{background:var(--card);border-color:var(--line);color:var(--ink)}
+.sec-h .ib{background:transparent;color:var(--band-ink);border-color:rgba(255,255,255,.3)}
+.sec-h .ib.confirm{background:var(--no);border-color:var(--no)}
+.addbar{padding:10px 12px 12px 46px;border-top:1px dashed var(--line);display:flex;flex-direction:column;gap:8px}
+.addbar .row{gap:8px}
+.chk{display:flex;align-items:center;gap:6px;font-size:14px}
+.chk input{width:18px;height:18px}
+
+.empty{padding:28px 16px;text-align:center;color:var(--muted)}
+.notice{border:1px solid var(--na);background:var(--na-bg);color:var(--ink);padding:10px 14px;border-radius:5px;font-size:14px}
+.legend{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:13px;color:var(--muted)}
+.legend span b{display:inline-block;min-width:26px;text-align:center;border-radius:3px;color:#fff;font-size:12px;padding:1px 4px;margin-right:4px}
+.copybox textarea{min-height:200px;font-size:13px}
+
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(16px + env(safe-area-inset-bottom,0px));background:var(--ink);color:var(--card);padding:10px 16px;border-radius:5px;font-size:14px;font-weight:600;z-index:20;max-width:calc(100% - 32px)}
+
+@media (max-width:600px){
+  h1{font-size:26px}
+  .brand-s{display:none}
+  .item{grid-template-columns:26px minmax(0,1fr)}
+  .acts{grid-column:2;justify-content:flex-start}
+  .ed-item{grid-template-columns:26px minmax(0,1fr)}
+  .ed-btns{grid-column:2;justify-content:flex-start}
+  .addbar{padding-left:12px}
+  .pct{font-size:22px}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+
+<header class="band">
+  <div class="band-in">
+    <img class="mark" alt="GL events" width="40" height="40" src="data:image/png;base64,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">
+    <div class="grow">
+      <div class="brand-t">Checklist Operacional</div>
+      <div class="brand-s">Farmasi Arena · pré-show</div>
+    </div>
+    <nav class="tabs" id="tabs">
+      <button class="tab" data-a="go-lista" id="tab-lista">Shows</button>
+      <button class="tab" data-a="go-modelo" id="tab-modelo">Modelo</button>
+    </nav>
+  </div>
+</header>
+<main><div class="wrap" id="app"><div class="panel empty">Carregando checklists…</div></div></main>
+<div class="toast" id="toast" hidden></div>
+
+<script>
+(() => {
+const app = document.getElementById('app');
+const toastEl = document.getElementById('toast');
+const STATUS = { ok:{sym:'✓', label:'Feito'}, nao:{sym:'✗', label:'Não feito'}, na:{sym:'N/A', label:'Não se aplica'} };
+
+let db = null, dl = null, canWrite = true;
+const S = {
+  view: 'lista', openId: null,
+  modelo: undefined, lista: undefined,
+  filtro: 'todos', editando: false,
+  obsAbertas: new Set(), addForm: null, confirm: null,
+  draft: {}, novo: { evento:'', data:'', resp:'' },
+  copyText: null, semDb: false, lento: false, erro: ''
+};
+
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const uid = () => Math.random().toString(36).slice(2, 10);
+const clone = o => JSON.parse(JSON.stringify(o));
+const fmtData = d => { if (!d) return ''; const [y,m,dd] = d.split('-'); return `${dd}/${m}/${y}`; };
+const val = (id, fallback) => (id in S.draft ? S.draft[id] : (fallback ?? ''));
+
+let toastT;
+function toast(msg){ toastEl.textContent = msg; toastEl.hidden = false; clearTimeout(toastT); toastT = setTimeout(() => toastEl.hidden = true, 2600); }
+function errMsg(e){
+  const c = e && e.code;
+  if (c === 'invalid_argument') return 'Você não tem permissão para alterar este checklist.';
+  if (c === 'quota_exceeded') return 'O espaço de dados ficou cheio. Exclua checklists antigos.';
+  if (c === 'resource_exhausted') return 'Muitas alterações seguidas. Espere um instante e tente de novo.';
+  return 'Não foi possível salvar. Verifique a conexão e tente de novo.';
+}
+
+// Uma gravação por vez em cada documento
+const filas = {};
+function gravar(path, fn){
+  const p = (filas[path] || Promise.resolve()).then(fn).catch(e => {
+    if (e && e.code === 'unavailable') return new Promise(r => setTimeout(r, 400 + Math.random()*600)).then(fn).catch(e2 => toast(errMsg(e2)));
+    if (e && e.code === 'invalid_argument') canWrite = false;
+    toast(errMsg(e));
+  });
+  filas[path] = p; return p;
+}
+
+// ---------- contagem ----------
+function itensDe(secoes){ const out=[]; (secoes||[]).forEach(s => (s.grupos||[]).forEach(g => (g.itens||[]).forEach(i => out.push(i)))); return out; }
+function contar(ck){
+  const c = { total:0, ok:0, nao:0, na:0, vazio:0 };
+  itensDe(ck.secoes).forEach(i => { c.total++; const s = ck.estado?.[i.id]?.s || ''; if (s) c[s]++; else c.vazio++; });
+  c.pct = c.total ? Math.round((c.ok + c.na) / c.total * 100) : 0;
+  return c;
+}
+const atual = () => (S.lista || []).find(c => c.id === S.openId);
+
+// ---------- render ----------
+// Não troca a tela no meio de um toque, senão o toque se perde
+let dedoNaTela = false, renderPendente = false;
+document.addEventListener('pointerdown', () => { dedoNaTela = true; }, true);
+document.addEventListener('pointercancel', () => { dedoNaTela = false; if (renderPendente) render(); }, true);
+document.addEventListener('pointerup', () => { setTimeout(() => { dedoNaTela = false; if (renderPendente) render(); }, 0); }, true);
+document.addEventListener('click', () => { dedoNaTela = false; }, true);
+function render(){
+  if (dedoNaTela) { renderPendente = true; return; }
+  renderPendente = false;
+  const ae = document.activeElement;
+  const foco = ae && ae.id && app.contains(ae) ? { id: ae.id, a: ae.selectionStart, b: ae.selectionEnd } : null;
+  document.getElementById('tab-lista').setAttribute('aria-current', S.view !== 'modelo' ? 'page' : 'false');
+  document.getElementById('tab-modelo').setAttribute('aria-current', S.view === 'modelo' ? 'page' : 'false');
+  let html = '';
+  if (S.pedirSenha) html = viewSenha();
+  else if (S.semDb) html =`<div class="panel empty">Abra esta página pelo link do claude.ai, conectado à sua conta, para ver e salvar os checklists.</div>`;
+  else if (S.view === 'modelo') html = viewModelo();
+  else if (S.view === 'check' && atual()) html = viewCheck(atual());
+  else html = viewLista();
+  app.innerHTML = html;
+  if (foco){ const el = document.getElementById(foco.id); if (el){ el.focus(); try { if (foco.a != null) el.setSelectionRange(foco.a, foco.b); } catch(_){} } }
+}
+
+function avisoCarga(){
+  if (S.erro) return `<div class="notice">${esc(S.erro)}</div>`;
+  if (S.lento) return `<div class="notice">Os dados ainda não chegaram. Verifique a conexão; a página continua tentando.</div>`;
+  return '';
+}
+
+function viewLista(){
+  const modeloVazio = S.modelo !== undefined && !itensDe(S.modelo?.secoes).length;
+  const form = canWrite ? `
+  <section class="panel panel-pad" aria-labelledby="h-novo">
+    <div class="head" style="margin-bottom:12px"><h2 id="h-novo">Novo checklist de pré-show</h2>
+      <span class="muted small">Cria uma cópia do modelo fixo. O que você mudar no show não altera o modelo.</span></div>
+    <form id="f-novo" class="row" style="align-items:flex-end">
+      <label class="fld">Show / evento<input type="text" id="n-evento" required placeholder="Ex.: JÃO" value="${esc(S.novo.evento)}"></label>
+      <label class="fld" style="flex:0 1 170px">Data do show<input type="date" id="n-data" value="${esc(S.novo.data)}"></label>
+      <label class="fld">Responsável<input type="text" id="n-resp" placeholder="Quem está fazendo" value="${esc(S.novo.resp)}"></label>
+      <button class="btn pri" type="submit" ${modeloVazio ? 'disabled' : ''}>Criar checklist</button>
+    </form>
+    ${modeloVazio ? `<p class="small muted" style="margin:10px 0 0">O modelo está vazio. Monte os itens na aba <b>Modelo</b> primeiro.</p>` : ''}
+  </section>` : '';
+  let lista;
+  if (S.lista === undefined) lista = `<div class="empty">Carregando…</div>`;
+  else if (!S.lista.length) lista = `<div class="empty">Nenhum checklist ainda. Preencha o nome do show acima e toque em <b>Criar checklist</b>.</div>`;
+  else lista = `<div class="shows">${S.lista.map(ck => {
+    const c = contar(ck), t = c.total || 1;
+    return `<button class="show" data-a="abrir" data-id="${esc(ck.id)}">
+      <span class="show-t">${esc(ck.evento || 'Sem nome')} ${ck.finalizado ? '<span class="chip done">Concluído</span>' : ''}</span>
+      <span class="show-p">${c.pct}%</span>
+      <span class="show-m">${[fmtData(ck.data), ck.responsavel].filter(Boolean).map(esc).join(' · ') || 'Sem data'} · ${c.ok} feitos${c.nao ? ` · ${c.nao} não feitos` : ''}${c.vazio ? ` · ${c.vazio} sem marcação` : ''}</span>
+      <span class="bar" aria-hidden="true"><i class="b-ok" style="width:${c.ok/t*100}%"></i><i class="b-na" style="width:${c.na/t*100}%"></i><i class="b-no" style="width:${c.nao/t*100}%"></i></span>
+    </button>`; }).join('')}</div>`;
+  return `${avisoCarga()}${form}
+  <section aria-labelledby="h-shows" style="display:flex;flex-direction:column;gap:10px">
+    <h2 id="h-shows">Shows</h2>
+    <div class="panel">${lista}</div>
+  </section>`;
+}
+
+function itemVisivel(ck, it){
+  const e = ck.estado?.[it.id] || {};
+  if (S.filtro === 'pend') return e.s !== 'ok' && e.s !== 'na';
+  if (S.filtro === 'obs') return !!e.obs;
+  return true;
+}
+
+function viewCheck(ck){
+  const c = contar(ck);
+  const ro = !canWrite;
+  const topo = `
+  <div class="head">
+    <button class="link" data-a="go-lista">← Todos os shows</button>
+    <div class="row"><h1 class="grow">${esc(ck.evento || 'Sem nome')}</h1>${ck.finalizado ? '<span class="chip done">Concluído</span>' : ''}</div>
+    <div class="muted">${[fmtData(ck.data) || 'Sem data', ck.responsavel ? 'Resp.: ' + ck.responsavel : ''].filter(Boolean).map(esc).join(' · ')}</div>
+  </div>
+  <div class="sticky">
+    <div class="sum">
+      <span class="k-ok"><b>${c.ok}</b> feitos</span>
+      <span class="k-no"><b>${c.nao}</b> não feitos</span>
+      <span class="k-na"><b>${c.na}</b> N/A</span>
+      <span class="muted"><b>${c.vazio}</b> sem marcação</span>
+      <span class="pct">${c.pct}%</span>
+    </div>
+    <div class="row" style="margin-top:8px;justify-content:space-between">
+      <div class="filters" role="group" aria-label="Filtrar itens">
+        ${[['todos','Todos'],['pend','Pendentes'],['obs','Com observação']].map(([k,l]) => `<button class="fchip" data-a="filtro" data-v="${k}" aria-pressed="${S.filtro===k}">${l}</button>`).join('')}
+      </div>
+      ${ro ? '' : `<button class="btn ${S.editando ? 'on' : ''}" data-a="editar">${S.editando ? 'Concluir edição' : 'Editar itens'}</button>`}
+    </div>
+  </div>
+  <div class="legend"><span><b style="background:var(--ok)">✓</b>Feito</span><span><b style="background:var(--no)">✗</b>Não feito</span><span><b style="background:var(--na)">N/A</b>Não se aplica neste show</span><span>Toque de novo para desmarcar.</span></div>`;
+
+  const corpo = S.editando && !ro ? editor(ck.secoes, 'check') : (ck.secoes || []).map(sec => {
+    const grupos = (sec.grupos || []).map(g => {
+      const its = (g.itens || []).map((it, idx) => ({ it, idx })).filter(x => itemVisivel(ck, x.it));
+      if (!its.length && S.filtro !== 'todos') return '';
+      const feitos = (g.itens||[]).filter(i => ['ok','na'].includes(ck.estado?.[i.id]?.s)).length;
+      return `${g.titulo ? `<div class="grp-h">${esc(g.titulo)}<span class="cnt">${feitos}/${(g.itens||[]).length}</span></div>` : ''}
+        ${its.map(({it, idx}) => itemRow(ck, it, idx, ro)).join('')}`;
+    }).join('');
+    if (!grupos.trim()) return '';
+    return `<section class="sec"><div class="sec-h">${esc(sec.titulo)}</div>${grupos}</section>`;
+  }).join('') || `<div class="panel empty">Nenhum item neste filtro.</div>`;
+
+  const rodape = `
+  <section class="panel panel-pad" style="display:flex;flex-direction:column;gap:12px">
+    <label class="fld">Observações gerais do show
+      <textarea id="obs-geral" ${ro ? 'readonly' : ''} placeholder="Ex.: cliente pediu balcão extra no nível 1">${esc(val('obs-geral', ck.obsGeral))}</textarea></label>
+    <div class="row">
+      ${ro ? '' : `<button class="btn ${ck.finalizado ? '' : 'pri'}" data-a="finalizar">${ck.finalizado ? 'Reabrir checklist' : 'Marcar como concluído'}</button>`}
+      <button class="btn" data-a="copiar">Copiar resumo</button>
+      ${dl ? `<button class="btn" data-a="baixar">Baixar para imprimir</button>` : ''}
+      <span class="grow"></span>
+      ${ro ? '' : (S.confirm === 'del-ck'
+        ? `<span class="small">Excluir de vez?</span><button class="btn danger" data-a="del-ck">Sim, excluir</button><button class="btn ghost" data-a="cancel">Não</button>`
+        : `<button class="btn ghost danger" data-a="del-ck">Excluir checklist</button>`)}
+    </div>
+    ${S.copyText ? `<div class="copybox"><p class="small muted" style="margin:0 0 6px">Não deu para copiar sozinho. Selecione o texto abaixo e copie:</p><textarea id="copy-fallback" readonly>${esc(S.copyText)}</textarea></div>` : ''}
+  </section>`;
+  return `${avisoCarga()}${topo}${corpo}${rodape}`;
+}
+
+function itemRow(ck, it, idx, ro){
+  const e = ck.estado?.[it.id] || {};
+  const s = e.s || '';
+  const obsId = 'o-' + it.id;
+  const obs = val(obsId, e.obs);
+  const aberta = S.obsAbertas.has(it.id);
+  return `<div class="item ${s ? 's-' + s : ''} ${ro ? 'ro' : ''}">
+    <span class="num">${idx + 1}</span>
+    <div style="min-width:0">
+      <div class="txt">${esc(it.texto)} ${it.nota ? `<span class="nota">${esc(it.nota)}</span>` : ''}</div>
+      ${aberta && !ro
+        ? `<input type="text" class="obs-in" id="${obsId}" data-iid="${esc(it.id)}" placeholder="Observação deste show (ex.: 78 grades)" value="${esc(obs)}">`
+        : (obs ? `<button class="obs-t" data-a="obs" data-iid="${esc(it.id)}" ${ro ? 'disabled' : ''} title="Toque para editar a observação"><span>obs: ${esc(obs)}</span>${ro ? '' : '<svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16v4zM14 6l4 4" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"/></svg>'}</button>` : '')}
+    </div>
+    <div class="acts">
+      <div class="seg" role="group" aria-label="Situação">
+        ${['ok','nao','na'].map(k => `<button class="${k}" data-a="st" data-iid="${esc(it.id)}" data-v="${k}" aria-pressed="${s===k}" title="${STATUS[k].label}" ${ro ? 'disabled' : ''}>${STATUS[k].sym}</button>`).join('')}
+      </div>
+      ${ro ? '' : `<button class="obs-b ${obs ? 'has' : ''}" data-a="obs" data-iid="${esc(it.id)}" title="Escrever observação deste item">${obs ? '<svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16v4zM14 6l4 4" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"/></svg> Obs' : '+ Obs'}</button>`}
+    </div>
+  </div>`;
+}
+
+// Editor compartilhado: modelo fixo e itens de um show
+function editor(secoes, tipo){
+  const cf = k => S.confirm === k;
+  const del = (k, a, extra) => `<button class="ib del ${cf(k) ? 'confirm' : ''}" data-a="${a}" ${extra} data-k="${k}" title="Remover">${cf(k) ? 'Remover?' : '✕'}</button>`;
+  const secs = (secoes || []).map((sec, si) => `
+  <section class="sec">
+    <div class="sec-h">
+      <input type="text" id="s-${esc(sec.id)}" data-a="ren-sec" data-sid="${esc(sec.id)}" value="${esc(val('s-' + sec.id, sec.titulo))}" aria-label="Nome da seção">
+      <button class="ib" data-a="mv-sec" data-sid="${esc(sec.id)}" data-d="-1" title="Subir" ${si === 0 ? 'disabled' : ''}>↑</button>
+      <button class="ib" data-a="mv-sec" data-sid="${esc(sec.id)}" data-d="1" title="Descer" ${si === secoes.length - 1 ? 'disabled' : ''}>↓</button>
+      ${del('sec-' + sec.id, 'del-sec', `data-sid="${esc(sec.id)}"`)}
+    </div>
+    ${(sec.grupos || []).map((g, gi) => `
+      <div class="grp-h">
+        <input type="text" id="g-${esc(g.id)}" data-a="ren-grp" data-gid="${esc(g.id)}" value="${esc(val('g-' + g.id, g.titulo))}" placeholder="Nome do nível ou bloco (pode ficar vazio)" aria-label="Nome do nível">
+        <button class="ib" data-a="mv-grp" data-gid="${esc(g.id)}" data-d="-1" title="Subir" ${gi === 0 ? 'disabled' : ''}>↑</button>
+        <button class="ib" data-a="mv-grp" data-gid="${esc(g.id)}" data-d="1" title="Descer" ${gi === sec.grupos.length - 1 ? 'disabled' : ''}>↓</button>
+        ${del('grp-' + g.id, 'del-grp', `data-gid="${esc(g.id)}"`)}
+      </div>
+      ${(g.itens || []).map((it, ii) => `
+        <div class="ed-item">
+          <span class="num">${ii + 1}</span>
+          <div class="ed-f">
+            <input type="text" id="t-${esc(it.id)}" data-a="ren-item" data-iid="${esc(it.id)}" data-f="texto" value="${esc(val('t-' + it.id, it.texto))}" aria-label="Texto do item">
+            <input type="text" class="nota-in" id="n-${esc(it.id)}" data-a="ren-item" data-iid="${esc(it.id)}" data-f="nota" value="${esc(val('n-' + it.id, it.nota))}" placeholder="Nota fixa em vermelho, ex.: (conforme necessidade do evento)" aria-label="Nota fixa">
+          </div>
+          <div class="ed-btns">
+            <button class="ib" data-a="mv-item" data-iid="${esc(it.id)}" data-d="-1" title="Subir" ${ii === 0 ? 'disabled' : ''}>↑</button>
+            <button class="ib" data-a="mv-item" data-iid="${esc(it.id)}" data-d="1" title="Descer" ${ii === g.itens.length - 1 ? 'disabled' : ''}>↓</button>
+            ${del('item-' + it.id, 'del-item', `data-iid="${esc(it.id)}"`)}
+          </div>
+        </div>`).join('')}
+      ${S.addForm === g.id ? `
+        <form class="addbar" data-gid="${esc(g.id)}" id="f-add">
+          <input type="text" id="add-txt" placeholder="Novo item, ex.: Montar balcão de credenciamento extra" value="${esc(val('add-txt'))}" required>
+          <input type="text" id="add-nota" class="nota-in" style="color:var(--note)" placeholder="Nota fixa (opcional)" value="${esc(val('add-nota'))}">
+          <div class="row">
+            ${tipo === 'check' ? `<label class="chk"><input type="checkbox" id="add-modelo" ${S.draft['add-modelo'] ? 'checked' : ''}> Adicionar também ao modelo (próximos shows)</label>` : ''}
+            <span class="grow"></span>
+            <button type="button" class="btn ghost" data-a="cancel">Cancelar</button>
+            <button type="submit" class="btn pri">Adicionar</button>
+          </div>
+        </form>`
+      : `<div class="addbar"><div><button class="link" data-a="add-item" data-gid="${esc(g.id)}">+ Adicionar item${g.titulo ? ' em ' + esc(g.titulo) : ''}</button></div></div>`}
+    `).join('')}
+    <div class="addbar"><div><button class="link" data-a="add-grp" data-sid="${esc(sec.id)}">+ Adicionar nível / bloco em ${esc(sec.titulo || 'esta seção')}</button></div></div>
+  </section>`).join('');
+  return `${secs}<div><button class="btn" data-a="add-sec">+ Adicionar seção</button></div>`;
+}
+
+function viewModelo(){
+  if (S.modelo === undefined) return `${avisoCarga()}<div class="panel empty">Carregando modelo…</div>`;
+  const intro = `<div class="head"><h1>Modelo fixo</h1>
+    <p class="muted" style="margin:0;max-width:62ch">Estes são os itens que entram em todo checklist novo. Mudanças aqui valem para os próximos shows e não mexem nos checklists já criados. A nota fixa aparece em vermelho, como no papel.</p></div>`;
+  if (!canWrite) return `${intro}<div class="notice">Você pode ver o modelo, mas não tem permissão para editar.</div>`;
+  return `${avisoCarga()}${intro}${editor(S.modelo?.secoes || [], 'modelo')}`;
+}
+
+// ---------- estrutura (modelo ou show) ----------
+function estrutura(tipo){ return clone(tipo === 'modelo' ? (S.modelo?.secoes || []) : (atual()?.secoes || [])); }
+function salvarEstrutura(tipo, secoes){
+  if (tipo === 'modelo'){
+    S.modelo = { ...(S.modelo || {}), secoes };
+    render();
+    return gravar('config/modelo', () => db.doc('config/modelo').set({ secoes, atualizadoEm: Date.now() }));
+  }
+  const ck = atual(); if (!ck) return;
+  return gravar('checklists/' + ck.id, () => db.doc('checklists/' + ck.id).update({ secoes }));
+}
+function acharGrupo(secoes, gid){ for (const s of secoes) for (const g of (s.grupos||[])) if (g.id === gid) return { s, g }; return null; }
+function acharItem(secoes, iid){ for (const s of secoes) for (const g of (s.grupos||[])) { const i = (g.itens||[]).findIndex(x => x.id === iid); if (i >= 0) return { g, i }; } return null; }
+function mover(arr, i, d){ const j = i + d; if (j < 0 || j >= arr.length) return; [arr[i], arr[j]] = [arr[j], arr[i]]; }
+const tipoAtual = () => S.view === 'modelo' ? 'modelo' : 'check';
+
+// ---------- ações ----------
+function precisaConfirmar(k){ if (S.confirm === k) { S.confirm = null; return false; } S.confirm = k; render(); return true; }
+
+app.addEventListener('click', ev => {
+  const b = ev.target.closest('[data-a]'); if (!b || b.disabled) return;
+  const a = b.dataset.a, t = tipoAtual();
+  if (b.tagName === 'INPUT') return;
+  if (a !== 'del-sec' && a !== 'del-grp' && a !== 'del-item' && a !== 'del-ck' && S.confirm) S.confirm = null;
+  switch (a){
+    case 'go-lista': irPara('lista'); break;
+    case 'abrir': S.openId = b.dataset.id; S.editando = false; S.filtro = 'todos'; S.copyText = null; S.obsAbertas.clear(); irPara('check'); break;
+    case 'filtro': S.filtro = b.dataset.v; render(); break;
+    case 'editar': S.editando = !S.editando; S.addForm = null; render(); break;
+    case 'st': {
+      const ck = atual(); if (!ck) return;
+      const iid = b.dataset.iid, atualS = ck.estado?.[iid]?.s || '';
+      const novo = atualS === b.dataset.v ? '' : b.dataset.v;
+      gravar('checklists/' + ck.id, () => db.doc('checklists/' + ck.id).update({ estado: { [iid]: { s: novo } } }));
+      break; }
+    case 'obs': {
+      const iid = b.dataset.iid;
+      if (S.obsAbertas.has(iid) && !(('o-' + iid) in S.draft) && !atual()?.estado?.[iid]?.obs) S.obsAbertas.delete(iid); else S.obsAbertas.add(iid);
+      render();
+      const el = document.getElementById('o-' + iid); if (el) el.focus();
+      break; }
+    case 'finalizar': { const ck = atual(); gravar('checklists/' + ck.id, () => db.doc('checklists/' + ck.id).update({ finalizado: !ck.finalizado })); break; }
+    case 'del-ck': {
+      if (precisaConfirmar('del-ck')) return;
+      const id = S.openId; irPara('lista');
+      gravar('checklists/' + id, () => db.doc('checklists/' + id).delete()).then(() => toast('Checklist excluído'));
+      break; }
+    case 'cancel': S.confirm = null; S.addForm = null; delete S.draft['add-txt']; delete S.draft['add-nota']; delete S.draft['add-modelo']; render(); break;
+    case 'copiar': copiar(); break;
+    case 'baixar': baixar(); break;
+    case 'add-item': S.addForm = b.dataset.gid; render(); { const el = document.getElementById('add-txt'); if (el) el.focus(); } break;
+    case 'add-grp': { const sec = estrutura(t); const s = sec.find(x => x.id === b.dataset.sid); s.grupos = s.grupos || []; s.grupos.push({ id: uid(), titulo: 'Novo nível', itens: [] }); salvarEstrutura(t, sec); break; }
+    case 'add-sec': { const sec = estrutura(t); sec.push({ id: uid(), titulo: 'Nova seção', grupos: [{ id: uid(), titulo: '', itens: [] }] }); salvarEstrutura(t, sec); break; }
+    case 'mv-sec': { const sec = estrutura(t); mover(sec, sec.findIndex(x => x.id === b.dataset.sid), +b.dataset.d); salvarEstrutura(t, sec); break; }
+    case 'mv-grp': { const sec = estrutura(t); const r = acharGrupo(sec, b.dataset.gid); mover(r.s.grupos, r.s.grupos.indexOf(r.g), +b.dataset.d); salvarEstrutura(t, sec); break; }
+    case 'mv-item': { const sec = estrutura(t); const r = acharItem(sec, b.dataset.iid); mover(r.g.itens, r.i, +b.dataset.d); salvarEstrutura(t, sec); break; }
+    case 'del-sec': { if (precisaConfirmar(b.dataset.k)) return; const sec = estrutura(t).filter(x => x.id !== b.dataset.sid); salvarEstrutura(t, sec); break; }
+    case 'del-grp': { if (precisaConfirmar(b.dataset.k)) return; const sec = estrutura(t); const r = acharGrupo(sec, b.dataset.gid); r.s.grupos = r.s.grupos.filter(g => g !== r.g); salvarEstrutura(t, sec); break; }
+    case 'del-item': { if (precisaConfirmar(b.dataset.k)) return; const sec = estrutura(t); const r = acharItem(sec, b.dataset.iid); r.g.itens.splice(r.i, 1); salvarEstrutura(t, sec); break; }
+  }
+});
+document.getElementById('tabs').addEventListener('click', ev => {
+  const b = ev.target.closest('[data-a]'); if (!b) return;
+  irPara(b.dataset.a === 'go-modelo' ? 'modelo' : 'lista');
+});
+function irPara(v){ S.view = v; S.confirm = null; S.addForm = null; S.copyText = null; render(); window.scrollTo(0, 0); }
+
+const obsTimers = {};
+app.addEventListener('input', ev => {
+  const el = ev.target; if (!el.id) return;
+  if (el.id === 'n-evento') { S.novo.evento = el.value; return; }
+  if (el.id === 'n-data') { S.novo.data = el.value; return; }
+  if (el.id === 'n-resp') { S.novo.resp = el.value; return; }
+  if (el.type === 'checkbox') { S.draft[el.id] = el.checked; return; }
+  S.draft[el.id] = el.value;
+  if (el.classList.contains('obs-in')) {
+    clearTimeout(obsTimers[el.id]);
+    obsTimers[el.id] = setTimeout(() => salvarObs(el.dataset.iid, S.draft[el.id]), 800);
+  } else if (el.id === 'obs-geral') {
+    clearTimeout(obsTimers[el.id]);
+    obsTimers[el.id] = setTimeout(() => salvarObsGeral(S.draft['obs-geral']), 900);
+  }
+});
+app.addEventListener('change', ev => {
+  const el = ev.target; if (!el.id) return;
+  if (el.classList.contains('obs-in')) {
+    clearTimeout(obsTimers[el.id]);
+    const v = el.value.trim();
+    salvarObs(el.dataset.iid, v).then(() => { delete S.draft[el.id]; S.obsAbertas.delete(el.dataset.iid); render(); });
+    return;
+  }
+  if (el.id === 'obs-geral') { clearTimeout(obsTimers[el.id]); salvarObsGeral(el.value).then(() => { delete S.draft['obs-geral']; }); return; }
+  const a = el.dataset.a, t = tipoAtual();
+  if (a === 'ren-sec' || a === 'ren-grp' || a === 'ren-item') {
+    const sec = estrutura(t), v = el.value.trim();
+    if (a === 'ren-sec') { const s = sec.find(x => x.id === el.dataset.sid); if (s) s.titulo = v; }
+    if (a === 'ren-grp') { const r = acharGrupo(sec, el.dataset.gid); if (r) r.g.titulo = v; }
+    if (a === 'ren-item') { const r = acharItem(sec, el.dataset.iid); if (r) { if (el.dataset.f === 'texto' && !v) { toast('O item precisa de um texto'); el.value = r.g.itens[r.i].texto; delete S.draft[el.id]; return; } r.g.itens[r.i][el.dataset.f] = v; } }
+    delete S.draft[el.id];
+    salvarEstrutura(t, sec);
+  }
+});
+function salvarObs(iid, v){ const ck = atual(); if (!ck) return Promise.resolve(); return gravar('checklists/' + ck.id, () => db.doc('checklists/' + ck.id).update({ estado: { [iid]: { obs: (v || '').trim() } } })); }
+function salvarObsGeral(v){ const ck = atual(); if (!ck) return Promise.resolve(); return gravar('checklists/' + ck.id, () => db.doc('checklists/' + ck.id).update({ obsGeral: v || '' })); }
+
+app.addEventListener('submit', ev => {
+  ev.preventDefault();
+  if (ev.target.id === 'f-novo') return criar();
+  if (ev.target.id === 'f-add') return adicionarItem(ev.target.dataset.gid);
+});
+
+function criar(){
+  const evento = S.novo.evento.trim();
+  if (!evento) { toast('Digite o nome do show'); return; }
+  if (!itensDe(S.modelo?.secoes).length) { toast('O modelo está vazio'); return; }
+  const ref = db.collection('checklists').doc();
+  const doc = { evento, data: S.novo.data, responsavel: S.novo.resp.trim(), criadoEm: Date.now(), finalizado: false, obsGeral: '', secoes: clone(S.modelo.secoes), estado: {} };
+  gravar('checklists/' + ref.id, () => ref.set(doc)).then(() => { S.novo = { evento:'', data:'', resp:'' }; });
+  S.openId = ref.id; S.filtro = 'todos'; S.editando = false; S.obsAbertas.clear();
+  S.view = 'check';
+  // mostra já com os dados locais enquanto o servidor confirma
+  if (!(S.lista || []).some(c => c.id === ref.id)) S.lista = [{ id: ref.id, ...doc }, ...(S.lista || [])];
+  render(); window.scrollTo(0, 0);
+}
+
+function adicionarItem(gid){
+  const texto = (S.draft['add-txt'] || '').trim();
+  if (!texto) { toast('Digite o texto do item'); return; }
+  const item = { id: uid(), texto, nota: (S.draft['add-nota'] || '').trim() };
+  const t = tipoAtual();
+  const sec = estrutura(t); const r = acharGrupo(sec, gid); if (!r) return;
+  r.g.itens = r.g.itens || []; r.g.itens.push(item);
+  const tambemModelo = t === 'check' && S.draft['add-modelo'];
+  S.addForm = null; delete S.draft['add-txt']; delete S.draft['add-nota']; delete S.draft['add-modelo'];
+  salvarEstrutura(t, sec);
+  if (tambemModelo) {
+    const m = clone(S.modelo?.secoes || []); const rm = acharGrupo(m, gid);
+    if (rm) { rm.g.itens = rm.g.itens || []; rm.g.itens.push(clone(item)); salvarEstrutura('modelo', m); toast('Item adicionado aqui e no modelo'); }
+    else toast('Esse nível não existe no modelo. O item ficou só neste show.');
+  } else render();
+}
+
+// ---------- resumo e impressão ----------
+function resumo(ck){
+  const c = contar(ck);
+  const L = [];
+  L.push('CHECKLIST OPERACIONAL – FARMASI ARENA');
+  L.push(`Show: ${ck.evento}${ck.data ? ' · ' + fmtData(ck.data) : ''}${ck.responsavel ? ' · Resp.: ' + ck.responsavel : ''}`);
+  L.push(`✓ ${c.ok} feitos · ✗ ${c.nao} não feitos · N/A ${c.na} · ${c.vazio} sem marcação (${c.pct}%)`);
+  const pend = [], obs = [];
+  (ck.secoes||[]).forEach(s => (s.grupos||[]).forEach(g => (g.itens||[]).forEach(it => {
+    const e = ck.estado?.[it.id] || {}, onde = [s.titulo, g.titulo].filter(Boolean).join(' › ');
+    if (e.s === 'nao' || !e.s) pend.push(`• [${onde}] ${it.texto} — ${e.s === 'nao' ? 'NÃO FEITO' : 'sem marcação'}${e.obs ? ' (obs: ' + e.obs + ')' : ''}`);
+    else if (e.obs) obs.push(`• [${onde}] ${it.texto} — obs: ${e.obs}`);
+  })));
+  if (pend.length) { L.push('', 'PENDÊNCIAS', ...pend); }
+  if (obs.length) { L.push('', 'OBSERVAÇÕES', ...obs); }
+  if (ck.obsGeral) { L.push('', 'OBSERVAÇÕES GERAIS', ck.obsGeral); }
+  return L.join('\n');
+}
+function copiar(){
+  const ck = atual(); if (!ck) return;
+  const txt = resumo(ck);
+  const falhou = () => { S.copyText = txt; render(); const el = document.getElementById('copy-fallback'); if (el) { el.focus(); el.select(); } };
+  try { navigator.clipboard.writeText(txt).then(() => { S.copyText = null; toast('Resumo copiado. É só colar no WhatsApp ou e-mail.'); }, falhou); } catch (_) { falhou(); }
+}
+function htmlImpressao(ck){
+  const c = contar(ck);
+  const cor = { ok:'#1b8f4c', nao:'#c8261b', na:'#b86a00' };
+  const linhas = (ck.secoes||[]).map(s => `<tr><td colspan="3" class="s">${esc(s.titulo)}</td></tr>` + (s.grupos||[]).map(g =>
+    (g.titulo ? `<tr><td colspan="3" class="g">${esc(g.titulo)}</td></tr>` : '') + (g.itens||[]).map((it, i) => {
+      const e = ck.estado?.[it.id] || {};
+      return `<tr><td class="n">${i+1}</td><td>${esc(it.texto)} ${it.nota ? `<span class="r">${esc(it.nota)}</span>` : ''}${e.obs ? `<div class="r o">obs: ${esc(e.obs)}</div>` : ''}</td><td class="st" style="color:${cor[e.s]||'#999'}">${e.s ? STATUS[e.s].sym : ''}</td></tr>`;
+    }).join('')).join('')).join('');
+  return `<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><title>Checklist ${esc(ck.evento)}</title><style>
+body{font-family:Arial,sans-serif;font-size:12px;color:#111;margin:24px}h1{background:#5a5a5a;color:#fff;font-size:18px;text-align:center;padding:10px;margin:0}
+.meta{padding:8px 0;font-size:13px}table{width:100%;border-collapse:collapse}td{border:1px solid #d6d6d6;padding:6px 8px;vertical-align:top}
+.s{background:#d9d9d9;font-weight:bold;font-size:13px}.g{background:#f2f2f2;font-weight:bold}.n{width:34px;text-align:center;color:#555}.st{width:70px;text-align:center;font-weight:bold;font-size:15px}
+.r{color:#e00000}.o{font-style:italic;margin-top:2px}.og{margin-top:14px;border:1px solid #d6d6d6;padding:8px;white-space:pre-wrap}@media print{body{margin:10mm}}</style></head><body>
+<h1>CHECKLIST OPERACIONAL - FARMASI ARENA</h1>
+<div class="meta"><b>Show:</b> ${esc(ck.evento)} &nbsp; <b>Data:</b> ${esc(fmtData(ck.data) || '—')} &nbsp; <b>Responsável:</b> ${esc(ck.responsavel || '—')}<br>
+✓ ${c.ok} feitos · ✗ ${c.nao} não feitos · N/A ${c.na} · ${c.vazio} sem marcação (${c.pct}%)</div>
+<table><tr><td class="s" colspan="2">Acessos</td><td class="s st">Situação</td></tr>${linhas}</table>
+${ck.obsGeral ? `<div class="og"><b>Observações gerais:</b>\n${esc(ck.obsGeral)}</div>` : ''}
+</body></html>`;
+}
+function baixar(){
+  const ck = atual(); if (!ck || !dl) return;
+  const nome = `Checklist ${ck.evento}${ck.data ? ' ' + fmtData(ck.data).replace(/\//g, '-') : ''}.html`.replace(/[\\/:*?"<>|]/g, '');
+  dl.save({ filename: nome, data: htmlImpressao(ck) })
+    .then(() => toast('Arquivo salvo. Abra no navegador e use Ctrl+P para imprimir ou gerar PDF.'))
+    .catch(e => { if (e && e.code === 'declined') return; toast('Não foi possível baixar aqui.'); });
+}
+
+// ---------- servidor próprio (Coolify) ----------
+// Mesmo formato do banco do claude.ai, para o resto da página não precisar saber onde está rodando
+function dbDoServidor(){
+  let base = { config: {}, checklists: {} }, pend = 0, querRecarregar = false, carregou = false;
+  const ouvintes = new Set();
+  const avisar = () => ouvintes.forEach(f => f());
+  const meta = () => ({ fromCache: false, hasPendingWrites: pend > 0 });
+  const mesclar = (a, b) => { for (const k in b) { const v = b[k]; if (v && typeof v === 'object' && !Array.isArray(v) && a[k] && typeof a[k] === 'object' && !Array.isArray(a[k])) mesclar(a[k], v); else a[k] = v; } return a; };
+  async function api(metodo, url, corpo){
+    const r = await fetch(url, { method: metodo, headers: corpo ? { 'content-type': 'application/json' } : {}, body: corpo ? JSON.stringify(corpo) : undefined, credentials: 'same-origin', cache: 'no-store' });
+    if (r.status === 401) { S.pedirSenha = true; render(); throw { code: 'sem_senha' }; }
+    if (r.status === 413) throw { code: 'quota_exceeded' };
+    if (r.status === 400) throw { code: 'invalid_argument' };
+    if (!r.ok) throw { code: 'unavailable' };
+    return r.status === 204 ? null : r.json();
+  }
+  async function recarregar(){
+    if (pend) { querRecarregar = true; return; }
+    const d = await api('GET', 'api/dados');
+    if (pend) { querRecarregar = true; return; }
+    base = { config: d.config || {}, checklists: d.checklists || {} }; carregou = true; avisar();
+  }
+  function escrever(metodo, col, id, corpo, local){
+    local(); avisar(); pend++;
+    return api(metodo, `api/doc/${col}/${encodeURIComponent(id)}`, corpo)
+      .catch(e => { querRecarregar = true; throw e; })
+      .finally(() => { pend--; if (!pend && querRecarregar) { querRecarregar = false; recarregar().catch(() => {}); } });
+  }
+  function ouvir(f){ ouvintes.add(f); f(); return () => ouvintes.delete(f); }
+  function doc(path){
+    const [col, id] = path.split('/');
+    return {
+      id, path,
+      set: d => escrever('PUT', col, id, d, () => { base[col][id] = clone(d); }),
+      update: d => escrever('PATCH', col, id, d, () => { base[col][id] = mesclar(base[col][id] || {}, clone(d)); }),
+      delete: () => escrever('DELETE', col, id, null, () => { delete base[col][id]; }),
+      onSnapshot: next => ouvir(() => { if (!carregou) return; const v = base[col][id]; next({ id, exists: !!v, data: () => v, metadata: meta() }); })
+    };
+  }
+  function collection(col){
+    const onSnapshot = next => ouvir(() => {
+      if (!carregou) return;
+      const docs = Object.entries(base[col]).map(([id, v]) => ({ id, exists: true, data: () => v, metadata: meta() }))
+        .sort((a, b) => (b.data().criadoEm || 0) - (a.data().criadoEm || 0));
+      next({ docs, size: docs.length, empty: !docs.length, metadata: meta() });
+    });
+    return { path: col, doc: id => doc(col + '/' + (id || 'c' + Date.now().toString(36) + uid())), orderBy: () => ({ onSnapshot }), onSnapshot };
+  }
+  function ligarAoVivo(){
+    try { const es = new EventSource('api/eventos'); es.onmessage = () => recarregar().catch(() => {}); } catch (_) {}
+    document.addEventListener('visibilitychange', () => { if (!document.hidden) recarregar().catch(() => {}); });
+    setInterval(() => { if (!document.hidden) recarregar().catch(() => {}); }, 60000);
+  }
+  return { doc, collection, recarregar, ligarAoVivo, entrar: senha => api('POST', 'api/entrar', { senha }) };
+}
+const baixarNoNavegador = {
+  save({ filename, data }){
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([data], { type: 'text/html;charset=utf-8' }));
+    a.download = filename; document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+    return Promise.resolve({ status: 'saved' });
+  }
+};
+function viewSenha(){
+  return `<section class="panel panel-pad" style="max-width:420px;margin:24px auto;display:flex;flex-direction:column;gap:12px">
+    <h2>Entrar</h2>
+    <p class="muted" style="margin:0">Digite a senha da equipe para ver e marcar os checklists.</p>
+    <form id="f-senha" class="row" style="align-items:flex-end">
+      <label class="fld">Senha<input type="password" id="senha" autocomplete="current-password" required></label>
+      <button class="btn pri" type="submit">Entrar</button>
+    </form>
+  </section>`;
+}
+app.addEventListener('submit', ev => {
+  if (ev.target.id !== 'f-senha') return;
+  ev.preventDefault();
+  const senha = document.getElementById('senha').value;
+  servidor.entrar(senha).then(() => { S.pedirSenha = false; iniciarServidor(); }, e => { if (e && e.code === 'sem_senha') toast('Senha errada'); else toast('Sem conexão com o servidor'); });
+});
+let servidor = null, servidorLigado = false;
+function iniciarServidor(){
+  servidor.recarregar().then(() => {
+    if (!servidorLigado) { servidorLigado = true; servidor.ligarAoVivo(); ouvirDados(); }
+  }, e => { if (e && e.code !== 'sem_senha') { S.erro = 'Não foi possível falar com o servidor. Verifique a internet e recarregue a página.'; render(); } });
+}
+
+// ---------- conexão com os dados ----------
+render();
+(async () => {
+  const c = window.claude;
+  if (!c || !c.use) {
+    servidor = dbDoServidor(); db = servidor; dl = baixarNoNavegador;
+    iniciarServidor();
+    return;
+  }
+  const [d, u, dw] = await Promise.all([c.use('db'), c.use('user').catch(() => null), c.use('downloads').catch(() => null)]);
+  db = d; dl = dw;
+  if (!db) { S.semDb = true; render(); return; }
+  if (u) { try { const pode = await u.can('data.write'); if (pode === false) canWrite = false; } catch(_){} }
+  ouvirDados();
+})();
+function ouvirDados(){
+  const timer = setTimeout(() => { S.lento = true; render(); }, 10000);
+  let ok1 = false, ok2 = false;
+  const pronto = (meta) => { if (meta && !meta.fromCache) { if (ok1 && ok2) { clearTimeout(timer); S.lento = false; } } };
+  db.doc('config/modelo').onSnapshot(snap => {
+    S.modelo = snap.exists ? snap.data() : null;
+    if (!snap.metadata.fromCache) ok1 = true; pronto(snap.metadata); render();
+  }, e => { clearTimeout(timer); S.erro = 'Não foi possível carregar o modelo.'; if (S.modelo === undefined) S.modelo = null; render(); });
+  db.collection('checklists').orderBy('criadoEm', 'desc').onSnapshot(snap => {
+    S.lista = snap.docs.map(x => ({ id: x.id, ...x.data() }));
+    if (!snap.metadata.fromCache) ok2 = true; pronto(snap.metadata);
+    if (S.view === 'check' && !atual() && !snap.metadata.fromCache && !snap.metadata.hasPendingWrites) S.view = 'lista';
+    render();
+  }, e => { clearTimeout(timer); S.erro = 'Não foi possível carregar os checklists.'; if (S.lista === undefined) S.lista = []; render(); });
+}
+})();
+</script>

@@ -1,0 +1,8 @@
+{
+  "name": "checklist-pre-show",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Checklist operacional de pré-show da Farmasi Arena",
+  "scripts": { "start": "node server.js" },
+  "engines": { "node": ">=20" }
+}
