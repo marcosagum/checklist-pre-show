@@ -14,3 +14,8 @@ Checklist de pré-show: modelo fixo editável e um checklist por show, com statu
 
 ## Rodar no computador
 `SENHA=equipe SENHA_ADMIN=admin node server.js` e abrir http://localhost:3000
+
+## Modelos de montagem
+Aba "Montagens": cada modelo tem nome, nível (0 a 3), fotos, lista de grades/material (tipo, ferro ou inox, com ou sem capa, quantidade) e o desenho na planta (linhas e pontos). Um item do checklist pode ser ligado a um modelo (em "Editar itens" ou na aba Modelo); no show, o item mostra "Ver montagem" e o quadro "Material do show" soma tudo. A quantidade pode ser ajustada só para um show.
+
+Fotos e plantas ficam em `DADOS_DIR/fotos` e `DADOS_DIR/plantas`, no volume, e só abrem com senha. **Nunca coloque plantas ou fotos no repositório**, que é público. Só o administrador envia ou muda.

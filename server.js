@@ -11,11 +11,17 @@ const DADOS_DIR = process.env.DADOS_DIR || path.join(__dirname, 'dados');
 const ARQ = path.join(DADOS_DIR, 'checklists.json');
 const SENHA = process.env.SENHA || '';
 const SENHA_ADMIN = process.env.SENHA_ADMIN || '';
-const COLECOES = new Set(['config', 'checklists']);
+const COLECOES = new Set(['config', 'checklists', 'montagens']);
 const LIMITE_CORPO = 1024 * 1024;
+const LIMITE_ARQUIVO = 10 * 1024 * 1024;
+// Fotos e plantas ficam no volume, nunca no repositório (que é público)
+const PASTAS = { fotos: path.join(DADOS_DIR, 'fotos'), plantas: path.join(DADOS_DIR, 'plantas') };
+const TIPOS = { 'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp' };
+const MIME = { jpg: 'image/jpeg', png: 'image/png', webp: 'image/webp' };
 
 // ---------- dados ----------
 fs.mkdirSync(DADOS_DIR, { recursive: true });
+Object.values(PASTAS).forEach(d => fs.mkdirSync(d, { recursive: true }));
 function carregar() {
   if (fs.existsSync(ARQ)) return JSON.parse(fs.readFileSync(ARQ, 'utf8'));
   const inicial = path.join(__dirname, 'inicial.json');
@@ -122,6 +128,22 @@ function lerCorpo(req) {
   });
 }
 
+function lerBinario(req) {
+  return new Promise((ok, falha) => {
+    let tam = 0; const partes = [];
+    req.on('data', p => { tam += p.length; if (tam > LIMITE_ARQUIVO) { falha({ status: 413 }); req.destroy(); } else partes.push(p); });
+    req.on('end', () => ok(Buffer.concat(partes)));
+    req.on('error', () => falha({ status: 400 }));
+  });
+}
+// Confere a assinatura do arquivo, para aceitar só imagem de verdade
+function ehImagem(buf, ext) {
+  if (ext === 'jpg') return buf[0] === 0xff && buf[1] === 0xd8;
+  if (ext === 'png') return buf.slice(0, 8).equals(Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]));
+  if (ext === 'webp') return buf.slice(0, 4).toString() === 'RIFF' && buf.slice(8, 12).toString() === 'WEBP';
+  return false;
+}
+
 const PAGINA = path.join(__dirname, 'public', 'pagina.html');
 function servirPagina(res) {
   const corpo = fs.readFileSync(PAGINA, 'utf8');
@@ -176,6 +198,46 @@ const servidor = http.createServer(async (req, res) => {
       ouvintes.add(res);
       req.on('close', () => ouvintes.delete(res));
       return;
+    }
+
+    // Ver uma foto ou planta (qualquer senha)
+    const ma = p.match(/^\/api\/arquivo\/(fotos|plantas)\/([a-z0-9-]{1,80}\.(?:jpg|png|webp))$/);
+    if (ma && req.method === 'GET') {
+      const arq = path.join(PASTAS[ma[1]], ma[2]);
+      if (!fs.existsSync(arq)) return json(res, 404, { erro: 'Arquivo não encontrado' });
+      res.writeHead(200, { 'content-type': MIME[ma[2].split('.').pop()], 'cache-control': 'private, max-age=604800, immutable' });
+      return fs.createReadStream(arq).pipe(res);
+    }
+    // Enviar foto de montagem (só administrador). O nome é novo a cada envio, então o cache nunca fica velho.
+    if (p === '/api/fotos' && req.method === 'POST') {
+      if (papel !== 'admin') return json(res, 403, { erro: 'Só o administrador pode enviar fotos' });
+      const ext = TIPOS[(req.headers['content-type'] || '').split(';')[0]];
+      if (!ext) return json(res, 400, { erro: 'Envie uma imagem JPG, PNG ou WEBP' });
+      const buf = await lerBinario(req);
+      if (!ehImagem(buf, ext)) return json(res, 400, { erro: 'O arquivo não é uma imagem válida' });
+      const nome = crypto.randomBytes(10).toString('hex') + '.' + ext;
+      fs.writeFileSync(path.join(PASTAS.fotos, nome), buf);
+      return json(res, 200, { arquivo: nome });
+    }
+    // Trocar a planta de um nível (só administrador)
+    const mp = p.match(/^\/api\/plantas\/([0-3])$/);
+    if (mp && req.method === 'PUT') {
+      if (papel !== 'admin') return json(res, 403, { erro: 'Só o administrador pode trocar a planta' });
+      const ext = TIPOS[(req.headers['content-type'] || '').split(';')[0]];
+      if (!ext) return json(res, 400, { erro: 'Envie uma imagem JPG, PNG ou WEBP' });
+      const w = Number(url.searchParams.get('w')), h = Number(url.searchParams.get('h'));
+      if (!(w > 0 && h > 0)) return json(res, 400, { erro: 'Faltou a largura e a altura da imagem' });
+      const buf = await lerBinario(req);
+      if (!ehImagem(buf, ext)) return json(res, 400, { erro: 'O arquivo não é uma imagem válida' });
+      const nome = `n${mp[1]}-${Date.now().toString(36)}.${ext}`;
+      fs.writeFileSync(path.join(PASTAS.plantas, nome), buf);
+      dados.config = dados.config || {};
+      const plantas = dados.config.plantas = dados.config.plantas || {};
+      const antiga = plantas[mp[1]] && plantas[mp[1]].arquivo;
+      plantas[mp[1]] = { arquivo: nome, w, h, atualizadoEm: Date.now() };
+      salvar(); avisarMudanca();
+      if (antiga && antiga !== nome) fs.rm(path.join(PASTAS.plantas, antiga), { force: true }, () => {});
+      return json(res, 200, plantas[mp[1]]);
     }
 
     const m = p.match(/^\/api\/doc\/([a-z]+)\/([A-Za-z0-9_\-.~:@+]{1,200})$/);

@@ -52,9 +52,9 @@ h2::before{content:"";width:6px;height:6px;border-radius:var(--r-pill);backgroun
 .row{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
 .grow{flex:1 1 auto;min-width:0}
 
-label.fld{display:flex;flex-direction:column;gap:8px;font-size:11px;font-weight:500;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);flex:1 1 180px;min-width:0}
-input[type=text],input[type=date],input[type=password],textarea{background:var(--paper);border:1px solid var(--line);border-radius:var(--r-field);padding:11px 14px;font-size:15px;width:100%;min-width:0;text-transform:none;letter-spacing:0;font-weight:400;color:var(--ink);transition:border-color .2s}
-input[type=text]:focus,input[type=date]:focus,input[type=password]:focus,textarea:focus{border-color:var(--brand-light);outline:none}
+.fld{display:flex;flex-direction:column;gap:8px;font-size:11px;font-weight:500;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);flex:1 1 180px;min-width:0}
+input[type=text],input[type=date],input[type=password],input[type=number],textarea{background:var(--paper);border:1px solid var(--line);border-radius:var(--r-field);padding:11px 14px;font-size:15px;width:100%;min-width:0;text-transform:none;letter-spacing:0;font-weight:400;color:var(--ink);transition:border-color .2s}
+input[type=text]:focus,input[type=date]:focus,input[type=password]:focus,input[type=number]:focus,textarea:focus{border-color:var(--brand-light);outline:none}
 textarea{resize:vertical;min-height:80px}
 
 .btn{border:1px solid var(--line);background:var(--card);border-radius:var(--r-pill);padding:0 20px;font-weight:500;font-size:12px;letter-spacing:.05em;text-transform:uppercase;display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:44px;color:var(--ink);transition:background .2s,color .2s,border-color .2s}
@@ -156,6 +156,50 @@ textarea{resize:vertical;min-height:80px}
 
 .toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(16px + env(safe-area-inset-bottom,0px));background:var(--ink);color:#fff;padding:12px 20px;border-radius:var(--r-pill);font-size:13px;font-weight:500;z-index:20;max-width:calc(100% - 32px)}
 
+/* Montagens */
+select{font:inherit;color:var(--ink);background:var(--paper);border:1px solid var(--line);border-radius:var(--r-field);padding:10px 12px;font-size:15px;width:100%;min-width:0;text-transform:none;letter-spacing:0;font-weight:400}
+select:focus{border-color:var(--brand-light);outline:none}
+.lig-sel{font-size:13px;padding:7px 10px;color:var(--muted)}
+.dot{display:inline-block;width:10px;height:10px;border-radius:var(--r-pill);margin-right:8px;vertical-align:middle;flex:none}
+.dot.big{width:14px;height:14px;margin-right:10px;vertical-align:4px}
+.mont-chip{margin-top:8px;display:inline-flex;align-items:center;gap:2px;border:1px solid var(--line);background:var(--paper);border-radius:var(--r-pill);padding:6px 12px;font-size:12px;font-weight:500;color:var(--ink);max-width:100%;text-align:left}
+.mont-chip:hover{border-color:var(--ink)}
+.mont-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px}
+.mont-card{display:flex;flex-direction:column;background:var(--card);border:1px solid var(--line);border-radius:var(--r-card);overflow:hidden;text-align:left;padding:0;transition:border-color .2s,transform .3s var(--ease-quart)}
+.mont-card:hover{border-color:var(--ghost);transform:translateY(-2px)}
+.mont-thumb{display:block;height:140px;background-size:cover;background-position:center}
+.mont-info{display:flex;flex-direction:column;gap:6px;padding:16px 18px 18px}
+.mont-t{font-weight:500;font-size:17px;text-transform:uppercase;letter-spacing:-.01em;display:flex;align-items:center}
+.legenda-mont{display:flex;flex-wrap:wrap;gap:4px 18px}
+.planta{display:flex;flex-direction:column;gap:6px}
+.planta-ctrl{display:flex;align-items:center;gap:6px}
+.planta-wrap{overflow:auto;border:1px solid var(--line);border-radius:var(--r-field);background:#fff;max-height:75vh;-webkit-overflow-scrolling:touch}
+.planta-in{position:relative;min-width:100%}
+.planta-in img{display:block;width:100%;height:auto;max-width:none;user-select:none;-webkit-user-select:none}
+.planta-in svg{position:absolute;inset:0;width:100%;height:100%}
+.planta-in svg.desenhando{cursor:crosshair}
+.planta-vazia{padding:28px 18px;text-align:center;color:var(--muted);border:1px dashed var(--line);border-radius:var(--r-field)}
+.fotos{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px;margin-top:10px}
+.fotos img{display:block;width:100%;aspect-ratio:4/3;object-fit:cover;border-radius:var(--r-field);background:var(--chip)}
+.foto-ed{position:relative}
+.foto-ed .ib{position:absolute;top:6px;right:6px;background:var(--card)}
+.foto-add{display:grid;place-items:center;aspect-ratio:4/3;border:1.5px dashed var(--ghost);border-radius:var(--r-field);color:var(--muted);font-size:13px;font-weight:500;cursor:pointer;text-align:center;padding:8px}
+.foto-add:hover{border-color:var(--ink);color:var(--ink)}
+table.mat{width:100%;border-collapse:collapse;margin-top:8px;font-size:14px}
+table.mat th{text-align:left;font-size:11px;font-weight:500;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);padding:6px 8px;border-bottom:1px solid var(--line)}
+table.mat td{padding:9px 8px;border-bottom:1px solid var(--line);vertical-align:middle}
+table.mat tr:last-child td{border-bottom:0}
+table.mat .q{width:90px}
+table.mat td.q{font-variant-numeric:tabular-nums;font-weight:500;font-size:16px}
+.panel-pad > .fld{flex:none}
+.qtd-in{width:80px;padding:7px 10px}
+.mat-ed{display:flex;flex-wrap:wrap;gap:8px;align-items:flex-end;padding:12px;border:1px solid var(--line);border-radius:var(--r-field)}
+.mat-ed .fld{flex:1 1 150px}
+.cores{display:flex;flex-wrap:wrap;gap:8px}
+.cor{width:34px;height:34px;border-radius:var(--r-pill);border:3px solid var(--card);box-shadow:0 0 0 1px var(--line)}
+.cor.on{box-shadow:0 0 0 2px var(--ink)}
+ul.lig{margin:10px 0 0;padding-left:18px;display:flex;flex-direction:column;gap:8px}
+
 @media (max-width:600px){
   h1{font-size:28px}
   .brand-t{font-size:14px;letter-spacing:.14em}
@@ -173,7 +217,12 @@ textarea{resize:vertical;min-height:80px}
   .pct{font-size:24px}
   .show{padding:16px 18px}
 }
-@media (max-width:380px){ .brand-s{display:none} }
+@media (max-width:480px){
+  .brand-t{display:none}
+  .brand-s{display:none}
+  .tab{padding:7px 9px;font-size:11px;letter-spacing:.03em}
+  .mark{width:34px;height:34px}
+}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 </style>
 
@@ -186,6 +235,7 @@ textarea{resize:vertical;min-height:80px}
     </div>
     <nav class="tabs" id="tabs">
       <button class="tab" data-a="go-lista" id="tab-lista">Shows</button>
+      <button class="tab" data-a="go-mont" id="tab-mont" hidden>Montagens</button>
       <button class="tab" data-a="go-modelo" id="tab-modelo">Modelo</button>
     </nav>
   </div>
@@ -206,7 +256,9 @@ const S = {
   filtro: 'todos', editando: false,
   obsAbertas: new Set(), addForm: null, confirm: null,
   draft: {}, novo: { evento:'', data:'', resp:'' },
-  copyText: null, semDb: false, lento: false, erro: ''
+  copyText: null, semDb: false, lento: false, erro: '',
+  montagens: undefined, plantas: {}, montId: null, mDraft: null, mEdit: false, mNovo: false,
+  ferramenta: null, linhaAtual: [], zoom: 1, nivelPlanta: 0, voltar: null, enviando: 0
 };
 
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -266,15 +318,24 @@ function render(){
   renderPendente = false;
   const ae = document.activeElement;
   const foco = ae && ae.id && app.contains(ae) ? { id: ae.id, a: ae.selectionStart, b: ae.selectionEnd } : null;
-  document.getElementById('tab-lista').setAttribute('aria-current', S.view !== 'modelo' ? 'page' : 'false');
+  const pw = document.getElementById('planta-wrap');
+  const rolagem = pw ? [pw.scrollLeft, pw.scrollTop] : null;
+  const emMont = S.view === 'montagens' || S.view === 'montagem';
+  document.getElementById('tab-lista').setAttribute('aria-current', S.view === 'lista' || S.view === 'check' ? 'page' : 'false');
+  document.getElementById('tab-mont').setAttribute('aria-current', emMont ? 'page' : 'false');
   document.getElementById('tab-modelo').setAttribute('aria-current', S.view === 'modelo' ? 'page' : 'false');
+  document.getElementById('tab-mont').hidden = !servidor;
   let html = '';
   if (S.pedirSenha) html = viewSenha();
   else if (S.semDb) html =`<div class="panel empty">Abra esta página pelo link do claude.ai, conectado à sua conta, para ver e salvar os checklists.</div>`;
   else if (S.view === 'modelo') html = viewModelo();
+  else if (S.view === 'montagens') html = viewMontagens();
+  else if (S.view === 'montagem') html = viewMontagem();
   else if (S.view === 'check' && atual()) html = viewCheck(atual());
   else html = viewLista();
   app.innerHTML = html;
+  const pw2 = document.getElementById('planta-wrap');
+  if (pw2 && rolagem) { pw2.scrollLeft = rolagem[0]; pw2.scrollTop = rolagem[1]; }
   if (foco){ const el = document.getElementById(foco.id); if (el){ el.focus(); try { if (foco.a != null) el.setSelectionRange(foco.a, foco.b); } catch(_){} } }
 }
 
@@ -365,7 +426,15 @@ function viewCheck(ck){
     return `<section class="sec"><div class="sec-h">${esc(sec.titulo)}</div>${grupos}</section>`;
   }).join('') || `<div class="panel empty">Nenhum item neste filtro.</div>`;
 
-  const rodape = `
+  const mat = materialDoShow(ck);
+  const material = mat.linhas.length ? `
+  <section class="panel panel-pad" style="display:flex;flex-direction:column;gap:10px">
+    <div class="row"><h2 class="grow">Material do show</h2><span class="pct" style="font-size:22px">${mat.total} peças</span></div>
+    <table class="mat"><tbody>${mat.linhas.map(([k, q]) => `<tr><td class="q">${q}</td><td>${esc(k)}</td></tr>`).join('')}</tbody></table>
+    <p class="small muted" style="margin:0">Soma dos ${mat.montagens} modelos de montagem ligados aos itens deste show. Item marcado N/A não entra.</p>
+  </section>` : '';
+
+  const rodape = `${material}
   <section class="panel panel-pad" style="display:flex;flex-direction:column;gap:12px">
     <label class="fld">Observações gerais do show
       <textarea id="obs-geral" ${ro ? 'readonly' : ''} placeholder="Ex.: cliente pediu balcão extra no nível 1">${esc(val('obs-geral', ck.obsGeral))}</textarea></label>
@@ -393,6 +462,7 @@ function itemRow(ck, it, idx, ro){
     <span class="num">${idx + 1}</span>
     <div style="min-width:0">
       <div class="txt">${esc(it.texto)} ${it.nota ? `<span class="nota">${esc(it.nota)}</span>` : ''}</div>
+      ${it.montagem && montagem(it.montagem) ? (() => { const m = montagem(it.montagem); return `<button class="mont-chip" data-a="go-mont-det" data-mid="${esc(m.id)}"><i class="dot" style="background:${m.cor || CORES[0]}"></i>Ver montagem · ${esc(resumoMont(m, ck))}${(m.fotos || []).length ? ` · ${m.fotos.length} foto${m.fotos.length === 1 ? '' : 's'}` : ''}</button>`; })() : ''}
       ${aberta && !ro
         ? `<input type="text" class="obs-in" id="${obsId}" data-iid="${esc(it.id)}" placeholder="Observação deste show (ex.: 78 grades)" value="${esc(obs)}">`
         : (obs ? `<button class="obs-t" data-a="obs" data-iid="${esc(it.id)}" ${ro ? 'disabled' : ''} title="Toque para editar a observação"><span>obs: ${esc(obs)}</span>${ro ? '' : '<svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16v4zM14 6l4 4" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"/></svg>'}</button>` : '')}
@@ -431,6 +501,10 @@ function editor(secoes, tipo){
           <div class="ed-f">
             <input type="text" id="t-${esc(it.id)}" data-a="ren-item" data-iid="${esc(it.id)}" data-f="texto" value="${esc(val('t-' + it.id, it.texto))}" aria-label="Texto do item">
             <input type="text" class="nota-in" id="n-${esc(it.id)}" data-a="ren-item" data-iid="${esc(it.id)}" data-f="nota" value="${esc(val('n-' + it.id, it.nota))}" placeholder="Nota fixa em vermelho, ex.: (conforme necessidade do evento)" aria-label="Nota fixa">
+            ${servidor && (S.montagens || []).length ? `<select class="lig-sel" id="lm-${esc(it.id)}" data-a="lig-mont" data-iid="${esc(it.id)}" aria-label="Modelo de montagem do item">
+              <option value="">Sem modelo de montagem</option>
+              ${montagensOrdenadas().map(m => `<option value="${esc(m.id)}" ${it.montagem === m.id ? 'selected' : ''}>Montagem: ${esc(m.titulo)} (Nível ${m.nivel})</option>`).join('')}
+            </select>` : ''}
           </div>
           <div class="ed-btns">
             <button class="ib" data-a="mv-item" data-iid="${esc(it.id)}" data-d="-1" title="Subir" ${ii === 0 ? 'disabled' : ''}>↑</button>
@@ -493,9 +567,38 @@ app.addEventListener('click', ev => {
   const b = ev.target.closest('[data-a]'); if (!b || b.disabled) return;
   const a = b.dataset.a, t = tipoAtual();
   if (b.tagName === 'INPUT') return;
-  if (a !== 'del-sec' && a !== 'del-grp' && a !== 'del-item' && a !== 'del-ck' && S.confirm) S.confirm = null;
+  if (!['del-sec', 'del-grp', 'del-item', 'del-ck', 'mont-excluir', 'foto-del'].includes(a) && S.confirm) S.confirm = null;
   switch (a){
     case 'go-lista': irPara('lista'); break;
+    // montagens
+    case 'go-mont-det': abrirMontagem(b.dataset.mid, S.view === 'check' ? 'check' : 'montagens'); break;
+    case 'mont-voltar': { const v = S.voltar?.view || 'montagens'; S.mEdit = false; S.ferramenta = null; S.linhaAtual = []; S.view = v === 'check' && !atual() ? 'montagens' : v; render(); window.scrollTo(0, 0); break; }
+    case 'mont-novo': editarMontagem(true); break;
+    case 'mont-editar': editarMontagem(false); break;
+    case 'mont-cancelar': S.mEdit = false; S.ferramenta = null; S.linhaAtual = []; if (S.mNovo) { S.mNovo = false; S.view = 'montagens'; } render(); break;
+    case 'mont-salvar': salvarMontagem(); break;
+    case 'mont-excluir': {
+      if (precisaConfirmar('del-mont')) return;
+      const id = S.montId; S.mEdit = false; S.montagens = (S.montagens || []).filter(m => m.id !== id); S.view = 'montagens';
+      gravar('montagens/' + id, () => db.doc('montagens/' + id).delete()).then(() => toast('Modelo excluído'));
+      render(); break; }
+    case 'nivel-planta': S.nivelPlanta = +b.dataset.v; S.zoom = 1; render(); break;
+    case 'zoom': { const z = [1, 1.5, 2, 3, 4], i = z.indexOf(S.zoom); S.zoom = z[Math.max(0, Math.min(z.length - 1, (i < 0 ? 0 : i) + (+b.dataset.d)))]; render(); break; }
+    case 'cor': S.mDraft.cor = b.dataset.v; render(); break;
+    case 'mat-add': S.mDraft.materiais = [...(S.mDraft.materiais || []), { id: uid(), nome: 'Grade de contenção', material: 'ferro', capa: 'com', qtd: 0 }]; render(); break;
+    case 'mat-del': S.mDraft.materiais = (S.mDraft.materiais || []).filter(x => x.id !== b.dataset.v); render(); break;
+    case 'foto-del': { if (precisaConfirmar(b.dataset.k)) return; S.mDraft.fotos = (S.mDraft.fotos || []).filter(f => f !== b.dataset.v); render(); break; }
+    case 'ferr': S.ferramenta = S.ferramenta === b.dataset.v ? null : b.dataset.v; if (S.ferramenta !== 'linha') S.linhaAtual = []; render(); break;
+    case 'linha-ok': if (S.linhaAtual.length >= 2) S.mDraft.desenho.linhas.push(S.linhaAtual); S.linhaAtual = []; render(); break;
+    case 'desfazer': {
+      const d = S.mDraft.desenho;
+      if (S.linhaAtual.length) S.linhaAtual.pop();
+      else if (S.ferramenta === 'ponto' && d.pontos.length) d.pontos.pop();
+      else if (d.linhas.length) d.linhas.pop();
+      else d.pontos.pop();
+      render(); break; }
+    case 'limpar-des': S.mDraft.desenho = { linhas: [], pontos: [] }; S.linhaAtual = []; render(); break;
+    case 'planta-svg': cliqueNaPlanta(ev, b); break;
     case 'pedir-admin': S.pedirSenha = true; render(); { const el = document.getElementById('senha'); if (el) el.focus(); } break;
     case 'cancel-senha': S.pedirSenha = false; render(); break;
     case 'sair': servidor.sair().finally(() => location.reload()); break;
@@ -536,9 +639,9 @@ app.addEventListener('click', ev => {
 });
 document.getElementById('tabs').addEventListener('click', ev => {
   const b = ev.target.closest('[data-a]'); if (!b) return;
-  irPara(b.dataset.a === 'go-modelo' ? 'modelo' : 'lista');
+  irPara(b.dataset.a === 'go-modelo' ? 'modelo' : b.dataset.a === 'go-mont' ? 'montagens' : 'lista');
 });
-function irPara(v){ S.view = v; S.confirm = null; S.addForm = null; S.copyText = null; render(); window.scrollTo(0, 0); }
+function irPara(v){ S.view = v; S.confirm = null; S.addForm = null; S.copyText = null; S.mEdit = false; S.ferramenta = null; S.linhaAtual = []; S.zoom = 1; render(); window.scrollTo(0, 0); }
 
 const obsTimers = {};
 app.addEventListener('input', ev => {
@@ -547,6 +650,9 @@ app.addEventListener('input', ev => {
   if (el.id === 'n-data') { S.novo.data = el.value; return; }
   if (el.id === 'n-resp') { S.novo.resp = el.value; return; }
   if (el.type === 'checkbox') { S.draft[el.id] = el.checked; return; }
+  if (el.dataset.mf && S.mDraft) { S.mDraft[el.dataset.mf] = el.value; return; }
+  if (el.dataset.mat && S.mDraft) { const x = (S.mDraft.materiais || []).find(y => y.id === el.dataset.mat); if (x) x[el.dataset.matf] = el.value; return; }
+  if (el.dataset.qsMid) return;
   S.draft[el.id] = el.value;
   if (el.classList.contains('obs-in')) {
     clearTimeout(obsTimers[el.id]);
@@ -565,6 +671,22 @@ app.addEventListener('change', ev => {
     return;
   }
   if (el.id === 'obs-geral') { clearTimeout(obsTimers[el.id]); salvarObsGeral(el.value).then(() => { delete S.draft['obs-geral']; }); return; }
+  // montagens
+  if (el.id === 'foto-in') { const fs = [...el.files]; el.value = ''; enviarFotos(fs); return; }
+  if (el.dataset.planta) { const f = el.files[0]; el.value = ''; if (f) enviarPlanta(el.dataset.planta, f); return; }
+  if (el.dataset.mf && S.mDraft) { S.mDraft[el.dataset.mf] = el.dataset.mf === 'nivel' ? +el.value : el.value; if (el.dataset.mf === 'nivel') { S.linhaAtual = []; render(); } return; }
+  if (el.dataset.mat && S.mDraft) { const x = (S.mDraft.materiais || []).find(y => y.id === el.dataset.mat); if (x) x[el.dataset.matf] = el.value; return; }
+  if (el.dataset.qsMid) {
+    const ck = atual(); if (!ck) return;
+    const n = el.value === '' ? null : Math.max(0, Math.round(Number(el.value) || 0));
+    gravar('checklists/' + ck.id, () => db.doc('checklists/' + ck.id).update({ qtdShow: { [el.dataset.qsMid]: { [el.dataset.qsMat]: n } } }));
+    return;
+  }
+  if (el.dataset.a === 'lig-mont') {
+    const t2 = tipoAtual(), sec = estrutura(t2), r = acharItem(sec, el.dataset.iid);
+    if (r) { if (el.value) r.g.itens[r.i].montagem = el.value; else delete r.g.itens[r.i].montagem; salvarEstrutura(t2, sec); }
+    return;
+  }
   const a = el.dataset.a, t = tipoAtual();
   if (a === 'ren-sec' || a === 'ren-grp' || a === 'ren-item') {
     const sec = estrutura(t), v = el.value.trim();
@@ -630,6 +752,8 @@ function resumo(ck){
   })));
   if (pend.length) { L.push('', 'PENDÊNCIAS', ...pend); }
   if (obs.length) { L.push('', 'OBSERVAÇÕES', ...obs); }
+  const mat = materialDoShow(ck);
+  if (mat.linhas.length) { L.push('', `MATERIAL DO SHOW (${mat.total} peças)`, ...mat.linhas.map(([k, q]) => `• ${q} × ${k}`)); }
   if (ck.obsGeral) { L.push('', 'OBSERVAÇÕES GERAIS', ck.obsGeral); }
   return L.join('\n');
 }
@@ -657,6 +781,7 @@ body{font-family:Arial,sans-serif;font-size:12px;color:#111;margin:24px}h1{backg
 ✓ ${c.ok} feitos · ✗ ${c.nao} não feitos · N/A ${c.na} · ${c.vazio} sem marcação (${c.pct}%)</div>
 <table><tr><td class="s" colspan="2">Acessos</td><td class="s st">Situação</td></tr>${linhas}</table>
 ${ck.obsGeral ? `<div class="og"><b>Observações gerais:</b>\n${esc(ck.obsGeral)}</div>` : ''}
+${(() => { const mat = materialDoShow(ck); return mat.linhas.length ? `<table style="margin-top:14px"><tr><td class="s" colspan="2">Material do show (${mat.total} peças)</td></tr>${mat.linhas.map(([k, q]) => `<tr><td class="n">${q}</td><td>${esc(k)}</td></tr>`).join('')}</table>` : ''; })()}
 </body></html>`;
 }
 function baixar(){
@@ -667,10 +792,264 @@ function baixar(){
     .catch(e => { if (e && e.code === 'declined') return; toast('Não foi possível baixar aqui.'); });
 }
 
+// ---------- modelos de montagem ----------
+const CORES = ['#e11518', '#1d4ed8', '#15803d', '#b45309', '#7c3aed', '#0e7490', '#be185d', '#4d7c0f'];
+const NOMES_GRADE = ['Grade de contenção', 'Grade de fechamento', 'Barricada', 'Gradil', 'Unifila'];
+const fotoUrl = nome => 'api/arquivo/fotos/' + encodeURIComponent(nome);
+const montagem = id => (S.montagens || []).find(m => m.id === id);
+const montagensOrdenadas = () => [...(S.montagens || [])].sort((a, b) => (a.nivel - b.nivel) || String(a.titulo).localeCompare(String(b.titulo), 'pt-BR'));
+function matLabel(m){
+  const det = [m.material === 'inox' ? 'inox' : m.material === 'ferro' ? 'ferro' : '', m.capa === 'com' ? 'com capa' : m.capa === 'sem' ? 'sem capa' : ''].filter(Boolean).join(', ');
+  return (m.nome || 'Grade') + (det ? ` (${det})` : '');
+}
+const qtdNoShow = (ck, mid, mat) => { const v = ck?.qtdShow?.[mid]?.[mat.id]; return Number.isFinite(v) ? v : (Number(mat.qtd) || 0); };
+function resumoMont(m, ck){
+  const tot = (m.materiais || []).reduce((s, x) => s + (ck ? qtdNoShow(ck, m.id, x) : (Number(x.qtd) || 0)), 0);
+  return tot ? `${tot} ${tot === 1 ? 'peça' : 'peças'}` : 'sem material';
+}
+// Itens (do modelo ou de um show) ligados a uma montagem
+function itensLigados(secoes, mid){
+  const out = [];
+  (secoes || []).forEach(s => (s.grupos || []).forEach(g => (g.itens || []).forEach((it, i) => { if (it.montagem === mid) out.push({ onde: [s.titulo, g.titulo].filter(Boolean).join(' › '), n: i + 1, texto: it.texto, id: it.id }); })));
+  return out;
+}
+// Soma o material das montagens ligadas aos itens do show (item marcado N/A não entra)
+function materialDoShow(ck){
+  const mids = new Set();
+  itensDe(ck.secoes).forEach(it => { if (it.montagem && montagem(it.montagem) && ck.estado?.[it.id]?.s !== 'na') mids.add(it.montagem); });
+  const soma = new Map();
+  mids.forEach(mid => (montagem(mid).materiais || []).forEach(x => {
+    const q = qtdNoShow(ck, mid, x); if (!q) return;
+    const k = matLabel(x); soma.set(k, (soma.get(k) || 0) + q);
+  }));
+  const linhas = [...soma.entries()].sort((a, b) => b[1] - a[1]);
+  return { linhas, total: linhas.reduce((s, [, q]) => s + q, 0), montagens: mids.size };
+}
+
+// Planta com o desenho das montagens (linhas e pontos guardados de 0 a 1)
+function plantaHTML(nivel, lista, editavel){
+  const pl = S.plantas?.[nivel];
+  if (!pl) return `<div class="planta-vazia">A planta do Nível ${nivel} ainda não foi enviada.${podeMudar() ? ' Envie em <b>Montagens → Plantas da arena</b>.' : ''}</div>`;
+  const W = 1000, H = Math.round(1000 * pl.h / pl.w);
+  const pt = p => `${(p[0] * W).toFixed(1)},${(p[1] * H).toFixed(1)}`;
+  const desenhar = (d, cor, fraco) => [
+    ...(d?.linhas || []).map(l => `<polyline points="${l.map(pt).join(' ')}" fill="none" stroke="${cor}" stroke-width="${fraco ? 3 : 6}" stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke" opacity="${fraco ? .45 : .95}"/>`),
+    ...(d?.pontos || []).map(p => `<circle cx="${(p[0] * W).toFixed(1)}" cy="${(p[1] * H).toFixed(1)}" r="${fraco ? 6 : 9}" fill="${cor}" stroke="#fff" stroke-width="2" vector-effect="non-scaling-stroke" opacity="${fraco ? .5 : 1}"/>`),
+  ].join('');
+  let svg = lista.map(m => desenhar(m.desenho, m.cor || CORES[0], m.fraco)).join('');
+  if (editavel && S.linhaAtual.length) {
+    svg += `<polyline points="${S.linhaAtual.map(pt).join(' ')}" fill="none" stroke="#0a0a0a" stroke-width="4" stroke-dasharray="8 6" vector-effect="non-scaling-stroke"/>`;
+    svg += S.linhaAtual.map(p => `<circle cx="${(p[0] * W).toFixed(1)}" cy="${(p[1] * H).toFixed(1)}" r="6" fill="#0a0a0a" stroke="#fff" stroke-width="2" vector-effect="non-scaling-stroke"/>`).join('');
+  }
+  return `<div class="planta">
+    <div class="planta-ctrl">
+      <span class="small muted">Nível ${nivel}</span><span class="grow"></span>
+      <button class="ib" data-a="zoom" data-d="-1" title="Diminuir" ${S.zoom <= 1 ? 'disabled' : ''}>−</button>
+      <span class="small muted" style="min-width:42px;text-align:center">${Math.round(S.zoom * 100)}%</span>
+      <button class="ib" data-a="zoom" data-d="1" title="Aumentar" ${S.zoom >= 4 ? 'disabled' : ''}>+</button>
+    </div>
+    <div class="planta-wrap" id="planta-wrap"><div class="planta-in" style="width:${S.zoom * 100}%">
+      <img src="api/arquivo/plantas/${esc(pl.arquivo)}" alt="Planta do Nível ${nivel} da Farmasi Arena" draggable="false">
+      <svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" ${editavel && S.ferramenta ? `data-a="planta-svg" class="desenhando"` : ''}>${svg}</svg>
+    </div></div>
+  </div>`;
+}
+
+function viewMontagens(){
+  const adm = podeMudar();
+  const todas = montagensOrdenadas();
+  const doNivel = todas.filter(m => Number(m.nivel) === S.nivelPlanta);
+  const cards = todas.length ? `<div class="mont-grid">${todas.map(m => `
+    <button class="mont-card" data-a="go-mont-det" data-mid="${esc(m.id)}">
+      <span class="mont-thumb" style="${m.fotos?.length ? `background-image:url('${fotoUrl(m.fotos[0])}')` : `background:${m.cor || CORES[0]}`}"></span>
+      <span class="mont-info">
+        <span class="mont-t"><i class="dot" style="background:${m.cor || CORES[0]}"></i>${esc(m.titulo || 'Sem nome')}</span>
+        <span class="small muted">Nível ${m.nivel} · ${resumoMont(m)} · ${(m.fotos || []).length} foto${(m.fotos || []).length === 1 ? '' : 's'}</span>
+        <span class="small">${(m.materiais || []).slice(0, 2).map(x => `${x.qtd || 0} × ${esc(matLabel(x))}`).join('<br>') || '<span class="muted">Sem material cadastrado</span>'}</span>
+      </span>
+    </button>`).join('')}</div>`
+    : `<div class="panel empty">Nenhum modelo de montagem ainda.${adm ? ' Toque em <b>Novo modelo de montagem</b> para criar o primeiro.' : ' O administrador cadastra os modelos.'}</div>`;
+  const plantasAdm = adm && servidor ? `
+  <section class="panel panel-pad" style="display:flex;flex-direction:column;gap:12px">
+    <h2>Plantas da arena</h2>
+    <p class="small muted" style="margin:0">Imagem de cada nível (PNG, JPG ou WEBP). Ficam guardadas no servidor, só para quem tem a senha.</p>
+    ${[0, 1, 2, 3].map(n => { const pl = S.plantas?.[n]; return `<div class="row">
+      <span class="grow"><b>Nível ${n}</b> <span class="small muted">${pl ? 'enviada em ' + new Date(pl.atualizadoEm).toLocaleDateString('pt-BR') : 'ainda não enviada'}</span></span>
+      <label class="btn">${pl ? 'Trocar planta' : 'Enviar planta'}<input type="file" accept="image/png,image/jpeg,image/webp" id="planta-in-${n}" data-planta="${n}" hidden></label>
+    </div>`; }).join('')}
+  </section>` : '';
+  return `${avisoCarga()}
+  <div class="head"><div class="row"><h1 class="grow">Montagens</h1>${adm ? `<button class="btn pri" data-a="mont-novo">+ Novo modelo de montagem</button>` : ''}</div>
+    <p class="muted" style="margin:0;max-width:62ch">Como cada estrutura é montada: fotos, quais grades usar, quantas e onde ficam na planta. Ligue o modelo a um item do checklist para ele aparecer no show.</p></div>
+  <section class="panel panel-pad" style="display:flex;flex-direction:column;gap:12px">
+    <div class="row"><h2 class="grow">Visão da planta</h2>
+      <div class="filters">${[0, 1, 2, 3].map(n => `<button class="fchip" data-a="nivel-planta" data-v="${n}" aria-pressed="${S.nivelPlanta === n}">Nível ${n}</button>`).join('')}</div></div>
+    ${plantaHTML(S.nivelPlanta, doNivel, false)}
+    ${doNivel.length ? `<div class="legenda-mont">${doNivel.map(m => `<button class="link" data-a="go-mont-det" data-mid="${esc(m.id)}"><i class="dot" style="background:${m.cor || CORES[0]}"></i>${esc(m.titulo)}</button>`).join('')}</div>` : `<p class="small muted" style="margin:0">Nenhuma montagem desenhada no Nível ${S.nivelPlanta}.</p>`}
+  </section>
+  <section style="display:flex;flex-direction:column;gap:10px"><h2>Modelos</h2>${cards}</section>
+  ${plantasAdm}
+  ${acessoInfo()}`;
+}
+
+function viewMontagem(){
+  const adm = podeMudar();
+  const ed = S.mEdit && adm;
+  const m = ed ? S.mDraft : montagem(S.montId);
+  if (!m) return `<div class="panel empty">Este modelo de montagem não existe mais. <button class="link" data-a="mont-voltar">Voltar</button></div>`;
+  const ck = S.voltar?.view === 'check' ? atual() : null;
+  const voltar = `<button class="link" data-a="mont-voltar">← ${ck ? 'Voltar para ' + esc(ck.evento) : 'Todas as montagens'}</button>`;
+  const ligados = itensLigados(ck ? ck.secoes : S.modelo?.secoes, m.id);
+  if (!ed) {
+    const linhasMat = (m.materiais || []).map(x => `<tr><td class="q">${ck ? qtdNoShow(ck, m.id, x) : (x.qtd || 0)}</td><td>${esc(matLabel(x))}</td>
+      ${ck ? `<td class="q">${adm ? `<input type="number" min="0" inputmode="numeric" class="qtd-in" id="qs-${esc(m.id)}-${esc(x.id)}" data-qs-mid="${esc(m.id)}" data-qs-mat="${esc(x.id)}" value="${Number.isFinite(ck.qtdShow?.[m.id]?.[x.id]) ? ck.qtdShow[m.id][x.id] : ''}" placeholder="${x.qtd || 0}" aria-label="Quantidade neste show">` : (Number.isFinite(ck.qtdShow?.[m.id]?.[x.id]) ? 'ajustado' : 'padrão')}</td>` : ''}</tr>`).join('');
+    return `${voltar}
+    <div class="head"><div class="row"><h1 class="grow"><i class="dot big" style="background:${m.cor || CORES[0]}"></i>${esc(m.titulo || 'Sem nome')}</h1>${adm ? `<button class="btn" data-a="mont-editar">Editar modelo</button>` : ''}</div>
+      <div class="muted">Nível ${m.nivel}${ligados.length ? ` · ligado a ${ligados.length} ${ligados.length === 1 ? 'item' : 'itens'} do ${ck ? 'checklist' : 'modelo'}` : ''}</div></div>
+    ${m.descricao ? `<section class="panel panel-pad"><h2>Como montar</h2><p style="margin:10px 0 0;white-space:pre-wrap">${esc(m.descricao)}</p></section>` : ''}
+    ${(m.fotos || []).length ? `<section class="panel panel-pad"><h2>Fotos</h2><div class="fotos">${m.fotos.map((f, i) => `<a href="${fotoUrl(f)}" target="_blank" rel="noopener"><img src="${fotoUrl(f)}" alt="Foto ${i + 1} de ${esc(m.titulo)}" loading="lazy"></a>`).join('')}</div></section>` : ''}
+    <section class="panel panel-pad"><h2>Material</h2>
+      ${(m.materiais || []).length ? `<table class="mat"><thead><tr><th class="q">${ck ? 'Neste show' : 'Qtd.'}</th><th>Grade / material</th>${ck ? `<th class="q">${adm ? 'Ajustar' : ''}</th>` : ''}</tr></thead><tbody>${linhasMat}</tbody></table>
+        ${ck && adm ? `<p class="small muted" style="margin:8px 0 0">Deixe "Ajustar" vazio para usar a quantidade padrão do modelo. O ajuste vale só para ${esc(ck.evento)}.</p>` : ''}`
+        : `<p class="small muted" style="margin:10px 0 0">Nenhum material cadastrado.</p>`}
+    </section>
+    <section class="panel panel-pad" style="display:flex;flex-direction:column;gap:10px"><h2>Onde fica</h2>
+      ${plantaHTML(Number(m.nivel), [...(S.montagens || []).filter(o => o.id !== m.id && Number(o.nivel) === Number(m.nivel)).map(o => ({ ...o, fraco: true })), m], false)}
+      <p class="small muted" style="margin:0">Em destaque esta montagem; as outras do mesmo nível aparecem mais claras.</p></section>
+    ${ligados.length ? `<section class="panel panel-pad"><h2>Itens do ${ck ? 'checklist' : 'modelo'} ligados</h2><ul class="lig">${ligados.map(l => `<li><span class="small muted">${esc(l.onde)} · ${l.n}</span><br>${esc(l.texto)}</li>`).join('')}</ul></section>` : ''}`;
+  }
+  // modo edição (administrador)
+  const cf = S.confirm === 'del-mont';
+  return `${voltar}
+  <div class="head"><h1>${S.mNovo ? 'Novo modelo de montagem' : 'Editar modelo'}</h1></div>
+  <section class="panel panel-pad" style="display:flex;flex-direction:column;gap:14px">
+    <label class="fld">Nome da montagem<input type="text" id="mf-titulo" data-mf="titulo" value="${esc(m.titulo || '')}" placeholder="Ex.: Grades do meio-fio na frente da casa"></label>
+    <div class="row" style="align-items:flex-end">
+      <label class="fld" style="flex:0 1 160px">Nível<select id="mf-nivel" data-mf="nivel">${[0, 1, 2, 3].map(n => `<option value="${n}" ${Number(m.nivel) === n ? 'selected' : ''}>Nível ${n}</option>`).join('')}</select></label>
+      <div class="fld" style="flex:1 1 220px">Cor na planta<div class="cores">${CORES.map(c => `<button class="cor ${m.cor === c ? 'on' : ''}" data-a="cor" data-v="${c}" style="background:${c}" aria-label="Cor ${c}" aria-pressed="${m.cor === c}"></button>`).join('')}</div></div>
+    </div>
+    <label class="fld">Como montar (opcional)<textarea id="mf-descricao" data-mf="descricao" placeholder="Ex.: Grades encostadas no meio-fio, do portão 1 até a bilheteria, com capa voltada para a rua.">${esc(m.descricao || '')}</textarea></label>
+  </section>
+  <section class="panel panel-pad" style="display:flex;flex-direction:column;gap:12px">
+    <h2>Fotos</h2>
+    <div class="fotos">${(m.fotos || []).map((f, i) => `<div class="foto-ed"><img src="${fotoUrl(f)}" alt="Foto ${i + 1}"><button class="ib del ${S.confirm === 'foto-' + f ? 'confirm' : ''}" data-a="foto-del" data-v="${esc(f)}" data-k="foto-${esc(f)}" title="Tirar foto">${S.confirm === 'foto-' + f ? 'Tirar?' : '✕'}</button></div>`).join('')}
+      <label class="foto-add">${S.enviando ? `Enviando ${S.enviando}…` : '+ Adicionar fotos'}<input type="file" accept="image/*" multiple id="foto-in" hidden></label></div>
+  </section>
+  <section class="panel panel-pad" style="display:flex;flex-direction:column;gap:10px">
+    <h2>Material</h2>
+    <datalist id="dl-grades">${NOMES_GRADE.map(n => `<option value="${n}">`).join('')}</datalist>
+    ${(m.materiais || []).map(x => `<div class="mat-ed">
+      <label class="fld">Grade / material<input type="text" list="dl-grades" id="mat-${esc(x.id)}-nome" data-mat="${esc(x.id)}" data-matf="nome" value="${esc(x.nome || '')}" placeholder="Ex.: Grade de contenção"></label>
+      <label class="fld">Tipo<select id="mat-${esc(x.id)}-material" data-mat="${esc(x.id)}" data-matf="material">${[['ferro', 'Ferro'], ['inox', 'Inox'], ['', 'Não se aplica']].map(([v, l]) => `<option value="${v}" ${(x.material || '') === v ? 'selected' : ''}>${l}</option>`).join('')}</select></label>
+      <label class="fld">Capa<select id="mat-${esc(x.id)}-capa" data-mat="${esc(x.id)}" data-matf="capa">${[['com', 'Com capa'], ['sem', 'Sem capa'], ['', 'Não se aplica']].map(([v, l]) => `<option value="${v}" ${(x.capa || '') === v ? 'selected' : ''}>${l}</option>`).join('')}</select></label>
+      <label class="fld" style="flex:0 1 90px">Qtd.<input type="number" min="0" inputmode="numeric" id="mat-${esc(x.id)}-qtd" data-mat="${esc(x.id)}" data-matf="qtd" value="${esc(x.qtd ?? '')}"></label>
+      <button class="ib del" data-a="mat-del" data-v="${esc(x.id)}" title="Tirar material">✕</button>
+    </div>`).join('') || '<p class="small muted" style="margin:0">Nenhum material ainda.</p>'}
+    <div><button class="link" data-a="mat-add">+ Adicionar grade / material</button></div>
+  </section>
+  <section class="panel panel-pad" style="display:flex;flex-direction:column;gap:10px">
+    <h2>Desenho na planta</h2>
+    <div class="row">
+      <button class="btn ${S.ferramenta === 'linha' ? 'on' : ''}" data-a="ferr" data-v="linha">Linha de grade</button>
+      <button class="btn ${S.ferramenta === 'ponto' ? 'on' : ''}" data-a="ferr" data-v="ponto">Ponto</button>
+      ${S.ferramenta === 'linha' && S.linhaAtual.length >= 2 ? `<button class="btn pri" data-a="linha-ok">Concluir linha</button>` : ''}
+      <button class="btn ghost" data-a="desfazer">Desfazer</button>
+      <button class="btn ghost danger" data-a="limpar-des">Limpar desenho</button>
+    </div>
+    <p class="small muted" style="margin:0">${S.ferramenta === 'linha' ? 'Toque na planta ponto a ponto, seguindo o trajeto da grade. Depois toque em <b>Concluir linha</b>.' : S.ferramenta === 'ponto' ? 'Toque na planta onde fica a montagem.' : 'Escolha <b>Linha de grade</b> ou <b>Ponto</b> e toque na planta. Use + para aproximar.'}</p>
+    ${plantaHTML(Number(m.nivel), [m], true)}
+  </section>
+  <div class="row">
+    <button class="btn pri" data-a="mont-salvar">Salvar modelo</button>
+    <button class="btn ghost" data-a="mont-cancelar">Cancelar</button>
+    <span class="grow"></span>
+    ${S.mNovo ? '' : (cf ? `<span class="small">Excluir este modelo?</span><button class="btn danger" data-a="mont-excluir">Sim, excluir</button><button class="btn ghost" data-a="cancel">Não</button>` : `<button class="btn ghost danger" data-a="mont-excluir">Excluir modelo</button>`)}
+  </div>`;
+}
+
+function abrirMontagem(mid, origem){
+  S.montId = mid; S.mEdit = false; S.mNovo = false; S.ferramenta = null; S.linhaAtual = []; S.zoom = 1;
+  S.voltar = origem === 'check' ? { view: 'check' } : { view: 'montagens' };
+  S.view = 'montagem'; S.confirm = null; render(); window.scrollTo(0, 0);
+}
+function editarMontagem(novo){
+  if (novo) {
+    const usadas = new Set((S.montagens || []).map(m => m.cor));
+    S.mDraft = { id: 'm' + Date.now().toString(36) + uid(), titulo: '', nivel: S.nivelPlanta, descricao: '', cor: CORES.find(c => !usadas.has(c)) || CORES[0], fotos: [], materiais: [{ id: uid(), nome: 'Grade de contenção', material: 'ferro', capa: 'com', qtd: 0 }], desenho: { linhas: [], pontos: [] }, criadoEm: Date.now() };
+    S.montId = S.mDraft.id; S.voltar = { view: 'montagens' }; S.view = 'montagem';
+  } else {
+    const m = montagem(S.montId); if (!m) return;
+    S.mDraft = clone(m); S.mDraft.desenho = S.mDraft.desenho || { linhas: [], pontos: [] };
+  }
+  S.mNovo = !!novo; S.mEdit = true; S.ferramenta = null; S.linhaAtual = []; S.zoom = 1; S.confirm = null;
+  render(); window.scrollTo(0, 0);
+}
+function salvarMontagem(){
+  const d = clone(S.mDraft);
+  if (!String(d.titulo || '').trim()) { toast('Dê um nome para a montagem'); return; }
+  if (S.linhaAtual.length >= 2) d.desenho.linhas.push(S.linhaAtual);
+  d.titulo = d.titulo.trim(); d.nivel = Number(d.nivel) || 0;
+  d.materiais = (d.materiais || []).map(x => ({ ...x, nome: String(x.nome || '').trim(), qtd: Math.max(0, Math.round(Number(x.qtd) || 0)) }));
+  d.atualizadoEm = Date.now();
+  const { id, ...corpo } = d;
+  const novo = S.mNovo;
+  S.montagens = [...(S.montagens || []).filter(m => m.id !== id), { id, ...corpo }];
+  S.mEdit = false; S.mNovo = false; S.ferramenta = null; S.linhaAtual = [];
+  gravar('montagens/' + id, () => db.doc('montagens/' + id).set(corpo)).then(() => toast(novo ? 'Modelo criado' : 'Modelo salvo'));
+  render(); window.scrollTo(0, 0);
+}
+// Diminui a foto no próprio aparelho antes de enviar
+async function reduzir(file, max, tipo, q){
+  const url = URL.createObjectURL(file);
+  try {
+    const img = await new Promise((ok, falha) => { const i = new Image(); i.onload = () => ok(i); i.onerror = falha; i.src = url; });
+    const k = Math.min(1, max / Math.max(img.naturalWidth, img.naturalHeight));
+    const c = document.createElement('canvas'); c.width = Math.round(img.naturalWidth * k); c.height = Math.round(img.naturalHeight * k);
+    c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+    const blob = await new Promise(ok => c.toBlob(ok, tipo, q));
+    return { blob, w: c.width, h: c.height };
+  } finally { URL.revokeObjectURL(url); }
+}
+async function enviarArquivo(metodo, url, blob){
+  const r = await fetch(url, { method: metodo, body: blob, headers: { 'content-type': blob.type }, credentials: 'same-origin' });
+  if (r.status === 401) { S.pedirSenha = true; render(); throw new Error('Entre de novo com a senha'); }
+  if (r.status === 403) throw new Error('Só o administrador pode enviar arquivos');
+  if (r.status === 413) throw new Error('Arquivo grande demais');
+  if (!r.ok) throw new Error((await r.json().catch(() => ({}))).erro || 'Não foi possível enviar');
+  return r.json();
+}
+async function enviarFotos(files){
+  for (const f of files) {
+    S.enviando = (S.enviando || 0) + 1; render();
+    try {
+      const { blob } = await reduzir(f, 1600, 'image/jpeg', 0.82);
+      const { arquivo } = await enviarArquivo('POST', 'api/fotos', blob);
+      if (S.mDraft) { S.mDraft.fotos = [...(S.mDraft.fotos || []), arquivo]; }
+    } catch (e) { toast(e.message || 'Não foi possível enviar a foto'); }
+    S.enviando--; render();
+  }
+}
+async function enviarPlanta(n, file){
+  toast('Enviando a planta do Nível ' + n + '…');
+  try {
+    const { blob, w, h } = await reduzir(file, 3200, 'image/webp', 0.86);
+    await enviarArquivo('PUT', `api/plantas/${n}?w=${w}&h=${h}`, blob);
+    await servidor.recarregar();
+    toast('Planta do Nível ' + n + ' enviada');
+  } catch (e) { toast(e.message || 'Não foi possível enviar a planta'); }
+}
+function cliqueNaPlanta(ev, svg){
+  const r = svg.getBoundingClientRect();
+  const p = [Math.min(1, Math.max(0, (ev.clientX - r.left) / r.width)), Math.min(1, Math.max(0, (ev.clientY - r.top) / r.height))].map(v => Math.round(v * 10000) / 10000);
+  if (S.ferramenta === 'ponto') S.mDraft.desenho.pontos.push(p);
+  else if (S.ferramenta === 'linha') S.linhaAtual.push(p);
+  render();
+}
+
 // ---------- servidor próprio (Coolify) ----------
 // Mesmo formato do banco do claude.ai, para o resto da página não precisar saber onde está rodando
 function dbDoServidor(){
-  let base = { config: {}, checklists: {} }, pend = 0, querRecarregar = false, carregou = false;
+  let base = { config: {}, checklists: {}, montagens: {} }, pend = 0, querRecarregar = false, carregou = false;
   const ouvintes = new Set();
   const avisar = () => ouvintes.forEach(f => f());
   const meta = () => ({ fromCache: false, hasPendingWrites: pend > 0 });
@@ -688,7 +1067,7 @@ function dbDoServidor(){
     if (pend) { querRecarregar = true; return; }
     const d = await api('GET', 'api/dados');
     if (pend) { querRecarregar = true; return; }
-    base = { config: d.config || {}, checklists: d.checklists || {} }; carregou = true;
+    base = { config: d.config || {}, checklists: d.checklists || {}, montagens: d.montagens || {} }; carregou = true;
     if (S.papel !== (d.papel || null)) { S.papel = d.papel || null; S.editando = false; render(); }
     avisar();
   }
@@ -703,16 +1082,16 @@ function dbDoServidor(){
     const [col, id] = path.split('/');
     return {
       id, path,
-      set: d => escrever('PUT', col, id, d, () => { base[col][id] = clone(d); }),
-      update: d => escrever('PATCH', col, id, d, () => { base[col][id] = mesclar(base[col][id] || {}, clone(d)); }),
+      set: d => escrever('PUT', col, id, d, () => { base[col] = base[col] || {}; base[col][id] = clone(d); }),
+      update: d => escrever('PATCH', col, id, d, () => { base[col] = base[col] || {}; base[col][id] = mesclar(base[col][id] || {}, clone(d)); }),
       delete: () => escrever('DELETE', col, id, null, () => { delete base[col][id]; }),
-      onSnapshot: next => ouvir(() => { if (!carregou) return; const v = base[col][id]; next({ id, exists: !!v, data: () => v, metadata: meta() }); })
+      onSnapshot: next => ouvir(() => { if (!carregou) return; const v = (base[col] || {})[id]; next({ id, exists: !!v, data: () => v, metadata: meta() }); })
     };
   }
   function collection(col){
     const onSnapshot = next => ouvir(() => {
       if (!carregou) return;
-      const docs = Object.entries(base[col]).map(([id, v]) => ({ id, exists: true, data: () => v, metadata: meta() }))
+      const docs = Object.entries(base[col] || {}).map(([id, v]) => ({ id, exists: true, data: () => v, metadata: meta() }))
         .sort((a, b) => (b.data().criadoEm || 0) - (a.data().criadoEm || 0));
       next({ docs, size: docs.length, empty: !docs.length, metadata: meta() });
     });
@@ -789,6 +1168,11 @@ function ouvirDados(){
     if (S.view === 'check' && !atual() && !snap.metadata.fromCache && !snap.metadata.hasPendingWrites) S.view = 'lista';
     render();
   }, e => { clearTimeout(timer); S.erro = 'Não foi possível carregar os checklists.'; if (S.lista === undefined) S.lista = []; render(); });
+  db.collection('montagens').orderBy('criadoEm', 'desc').onSnapshot(snap => {
+    S.montagens = snap.docs.map(x => ({ id: x.id, ...x.data() }));
+    render();
+  }, () => { if (S.montagens === undefined) S.montagens = []; });
+  db.doc('config/plantas').onSnapshot(snap => { S.plantas = (snap.exists && snap.data()) || {}; render(); }, () => {});
 }
 })();
 </script>
