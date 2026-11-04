@@ -243,7 +243,8 @@ const servidor = http.createServer(async (req, res) => {
     const m = p.match(/^\/api\/doc\/([a-z]+)\/([A-Za-z0-9_\-.~:@+]{1,200})$/);
     if (m && COLECOES.has(m[1])) {
       const [, col, id] = m;
-      if (col === 'config' && id !== 'modelo') return json(res, 400, { erro: 'Documento inválido' });
+      // config/modelo = itens do checklist; config/fixos = pórticos fixos de cada nível
+      if (col === 'config' && id !== 'modelo' && id !== 'fixos') return json(res, 400, { erro: 'Documento inválido' });
       dados[col] = dados[col] || {};
       if (req.method === 'DELETE') {
         if (papel !== 'admin') return json(res, 403, { erro: 'Só o administrador pode excluir' });

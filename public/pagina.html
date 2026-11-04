@@ -56,6 +56,7 @@ h2::before{content:"";width:6px;height:6px;border-radius:var(--r-pill);backgroun
 input[type=text],input[type=date],input[type=password],input[type=number],textarea{background:var(--paper);border:1px solid var(--line);border-radius:var(--r-field);padding:11px 14px;font-size:15px;width:100%;min-width:0;text-transform:none;letter-spacing:0;font-weight:400;color:var(--ink);transition:border-color .2s}
 input[type=text]:focus,input[type=date]:focus,input[type=password]:focus,input[type=number]:focus,textarea:focus{border-color:var(--brand-light);outline:none}
 textarea{resize:vertical;min-height:80px}
+input[type=range]{width:100%;accent-color:var(--brand);margin:6px 0}
 
 .btn{border:1px solid var(--line);background:var(--card);border-radius:var(--r-pill);padding:0 20px;font-weight:500;font-size:12px;letter-spacing:.05em;text-transform:uppercase;display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:44px;color:var(--ink);transition:background .2s,color .2s,border-color .2s}
 .btn:hover{background:var(--ink);color:#fff;border-color:var(--ink)}
@@ -342,7 +343,7 @@ function render(){
   const foco = ae && ae.id && app.contains(ae) ? { id: ae.id, a: ae.selectionStart, b: ae.selectionEnd } : null;
   const pw = document.getElementById('planta-wrap');
   const rolagem = pw ? [pw.scrollLeft, pw.scrollTop] : null;
-  const emMont = S.view === 'montagens' || S.view === 'montagem';
+  const emMont = S.view === 'montagens' || S.view === 'montagem' || S.view === 'fixos';
   document.getElementById('tab-lista').setAttribute('aria-current', S.view === 'lista' || S.view === 'check' ? 'page' : 'false');
   document.getElementById('tab-mont').setAttribute('aria-current', emMont ? 'page' : 'false');
   document.getElementById('tab-modelo').setAttribute('aria-current', S.view === 'modelo' ? 'page' : 'false');
@@ -353,6 +354,7 @@ function render(){
   else if (S.view === 'modelo') html = viewModelo();
   else if (S.view === 'montagens') html = viewMontagens();
   else if (S.view === 'montagem') html = viewMontagem();
+  else if (S.view === 'fixos') html = viewFixos();
   else if (S.view === 'check' && atual()) html = viewCheck(atual());
   else html = viewLista();
   app.innerHTML = html;
@@ -630,6 +632,9 @@ app.addEventListener('click', ev => {
       const d = +b.dataset.d;
       const z = d > 0 ? (ZOOMS.find(x => x > S.zoom + .01) ?? ZMAX) : ([...ZOOMS].reverse().find(x => x < S.zoom - .01) ?? 1);
       zoomEm(z); break; }
+    case 'fixos-editar': abrirFixos(+b.dataset.v); break;
+    case 'fixos-salvar': salvarFixos(); break;
+    case 'fixos-voltar': S.mEdit = false; limparDesenhoAtivo(); S.view = 'montagens'; render(); window.scrollTo(0, 0); break;
     case 'tela-cheia': abrirTelaCheia(); break;
     case 'tela-fechar': fecharTelaCheia(); break;
     case 'cor': S.mDraft.cor = b.dataset.v; render(); break;
@@ -705,7 +710,13 @@ app.addEventListener('input', ev => {
   if (el.type === 'checkbox') { S.draft[el.id] = el.checked; return; }
   if (el.dataset.mf && S.mDraft) { S.mDraft[el.dataset.mf] = el.value; return; }
   if (el.dataset.mat && S.mDraft) { const x = (S.mDraft.materiais || []).find(y => y.id === el.dataset.mat); if (x) x[el.dataset.matf] = el.value; return; }
-  if (el.dataset.elf && S.mDraft) { const e = elSelecionado(); if (e) e[el.dataset.elf] = el.value; return; }
+  if (el.dataset.elf && S.mDraft) {
+    const e = elSelecionado(); if (!e) return;
+    if (el.dataset.elf === 'larg') {
+      e.larg = S.ultimaLarg = Number(el.value);
+      const svg = document.querySelector('svg[data-a="planta-svg"]'); if (svg && ultimaPlanta) svg.innerHTML = desenhoSVG(ultimaPlanta);
+    } else e[el.dataset.elf] = el.value;
+    return; }
   if (el.dataset.qsMid) return;
   S.draft[el.id] = el.value;
   if (el.classList.contains('obs-in')) {
@@ -732,7 +743,8 @@ app.addEventListener('change', ev => {
   if (el.dataset.mat && S.mDraft) { const x = (S.mDraft.materiais || []).find(y => y.id === el.dataset.mat); if (x) x[el.dataset.matf] = el.value; render(); return; }
   if (el.dataset.elf && S.mDraft) {
     const e = elSelecionado(); if (!e) return;
-    e[el.dataset.elf] = el.dataset.elf === 'qtd' ? (el.value === '' ? null : Math.max(0, Math.round(Number(el.value) || 0))) : el.value;
+    const f = el.dataset.elf;
+    e[f] = f === 'qtd' ? (el.value === '' ? null : Math.max(0, Math.round(Number(el.value) || 0))) : f === 'larg' ? Number(el.value) : el.value;
     render(); return; }
   if (el.dataset.qsMid) {
     const ck = atual(); if (!ck) return;
@@ -888,12 +900,15 @@ function materialDoShow(ck){
 // Cada marcação: { id, tipo, pts: [[x, y], ...] de 0 a 1, qtd, mat (material da lista), nota }
 const TIPOS_EL = {
   grade:    { nome: 'Grade', forma: 'linha', un: ['grade', 'grades'], fem: true, dica: 'Toque na planta ponto a ponto, seguindo o trajeto da grade.' },
-  baia:     { nome: 'Baia de grade', forma: 'area', un: ['grade', 'grades'], fem: true, dica: 'Toque em cada canto da baia. Para fechar, toque de novo no primeiro ponto (branco).' },
-  pranchao: { nome: 'Pranchão', forma: 'linha', un: ['pranchão', 'pranchões'], dica: 'Toque no começo e no fim do pranchão (ou ponto a ponto, se ele fizer curva).' },
-  portico:  { nome: 'Pórtico', forma: 'ponto', un: ['pórtico', 'pórticos'], dica: 'Toque na planta onde fica cada pórtico.' },
-  recolha:  { nome: 'Recolha de alimento', forma: 'ponto', un: null, dica: 'Toque na planta onde fica a recolha de alimento.' },
+  baia:     { nome: 'Baia de grade', forma: 'corredor', un: ['grade', 'grades'], fem: true, dica: 'Toque no começo e no fim do corredor; ele se monta sozinho. A largura você ajusta no painel.' },
+  pranchao: { nome: 'Pranchão', forma: 'ponto', un: ['pranchão', 'pranchões'], dica: 'Toque onde fica cada pranchão.' },
+  recolha:  { nome: 'Recolha de alimento', forma: 'ponto', un: null, dica: 'Toque onde fica a recolha de alimento.' },
+  portico:  { nome: 'Pórtico', forma: 'ponto', un: null, dica: 'Toque onde fica cada pórtico. Eles aparecem em todas as montagens deste nível.' },
 };
-const ORDEM_TIPOS = ['grade', 'baia', 'pranchao', 'portico', 'recolha'];
+// Pórticos são fixos da casa: marcados uma vez por nível (config/fixos), não em cada montagem
+const ORDEM_TIPOS = ['grade', 'baia', 'pranchao', 'recolha'];
+const tiposDaTela = () => S.view === 'fixos' ? ['portico'] : ORDEM_TIPOS;
+const COR_FIXO = '#3f3f46', LARG_PADRAO = 0.012;
 const tipoEl = t => TIPOS_EL[t] || { nome: 'Ponto', forma: 'ponto', un: null };
 const ZOOMS = [1, 1.5, 2, 3, 4, 6], ZMAX = 6;
 // Desenhos antigos (só linhas e pontos) viram grades e pontos
@@ -913,20 +928,37 @@ function matPadrao(tipo){
   return '';
 }
 function limparDesenhoAtivo(){ S.ferramenta = null; S.linhaAtual = []; S.selEl = null; S.telaCheia = false; }
+// Formato gravado de cada marcação
+function limparEls(els){
+  return (els || []).map(e => ({ id: e.id, tipo: e.tipo, pts: e.pts,
+    qtd: e.qtd == null || e.qtd === '' ? null : Math.max(0, Math.round(Number(e.qtd) || 0)),
+    mat: e.mat || '', nota: String(e.nota || '').trim(),
+    ...(e.larg ? { larg: Math.min(0.04, Math.max(0.004, Number(e.larg) || LARG_PADRAO)) } : {}) }));
+}
+// Pranchão desenhado como linha (versão anterior) vira adesivo no meio dela
+function normalizarEls(els){
+  return (els || []).map(e => TIPOS_EL[e.tipo]?.forma === 'ponto' && (e.pts || []).length > 1 ? { ...e, pts: [meioDaLinha(e.pts)] } : e);
+}
+// Corredor (baia): dois pontos e uma largura viram duas linhas de grade paralelas
+function corredor(P, larg, W){
+  const [a, b] = P, dx = b[0] - a[0], dy = b[1] - a[1], len = Math.hypot(dx, dy) || 1;
+  const h = (larg || LARG_PADRAO) * W / 2, nx = -dy / len * h, ny = dx / len * h;
+  return { l1: [[a[0] + nx, a[1] + ny], [b[0] + nx, b[1] + ny]], l2: [[a[0] - nx, a[1] - ny], [b[0] - nx, b[1] - ny]], poly: [[a[0] + nx, a[1] + ny], [b[0] + nx, b[1] + ny], [b[0] - nx, b[1] - ny], [a[0] - nx, a[1] - ny]] };
+}
 
 // Símbolo de pórtico, recolha e ponto (desenhado em pixels, centrado em 0,0)
 function marcador(tipo, cor, sel){
   const halo = sel ? `<circle r="19" fill="#0a0a0a" fill-opacity=".22"/>` : '';
   if (tipo === 'portico') return `${halo}<rect x="-12" y="-12" width="24" height="24" rx="6" fill="#fff" stroke="${cor}" stroke-width="3"/><path d="M-6 7V-1a6 6 0 0 1 12 0v8" fill="none" stroke="${cor}" stroke-width="2.6" stroke-linecap="round"/>`;
   if (tipo === 'recolha') return `${halo}<circle r="12.5" fill="#fff" stroke="${cor}" stroke-width="3"/><path d="M-7 -1h14l-2.2 7.5h-9.6z" fill="${cor}"/><path d="M-3.5 -1.5l2.5-5.5M3.5 -1.5l-2.5-5.5" stroke="${cor}" stroke-width="2" stroke-linecap="round" fill="none"/>`;
+  if (tipo === 'pranchao') return `${halo}<rect x="-14" y="-9" width="28" height="18" rx="4" fill="#fff" stroke="${cor}" stroke-width="3"/><rect x="-11" y="-6" width="22" height="12" rx="1.5" fill="${cor}" fill-opacity=".35"/><path d="M-3.7 -6v12M3.7 -6v12" stroke="${cor}" stroke-width="2"/>`;
   return `${halo}<circle r="9" fill="${cor}" stroke="#fff" stroke-width="2.5"/>`;
 }
 // Ícone pequeno para botões, legenda e lista
 function iconeTipo(tipo, cor){
   let c;
-  if (tipo === 'grade') c = `<line x1="2" y1="9" x2="26" y2="9" stroke="${cor}" stroke-width="4" stroke-dasharray="6 1.6"/>`;
-  else if (tipo === 'baia') c = `<rect x="3" y="3" width="22" height="12" fill="${cor}" fill-opacity=".18" stroke="${cor}" stroke-width="2.6" stroke-dasharray="5 1.4"/>`;
-  else if (tipo === 'pranchao') c = `<line x1="2" y1="9" x2="26" y2="9" stroke="#0a0a0a" stroke-width="9"/><line x1="3" y1="9" x2="25" y2="9" stroke="#fff" stroke-width="7"/><line x1="3" y1="9" x2="25" y2="9" stroke="${cor}" stroke-opacity=".6" stroke-width="7" stroke-dasharray="6 1.5"/>`;
+  if (tipo === 'grade') c = `<line x1="2" y1="9" x2="26" y2="9" stroke="${cor}" stroke-width="3" stroke-dasharray="5 2"/>`;
+  else if (tipo === 'baia') c = `<rect x="2" y="5" width="24" height="8" fill="${cor}" fill-opacity=".15"/><path d="M2 5H26M2 13H26" stroke="${cor}" stroke-width="2.4" stroke-dasharray="4 1.6"/>`;
   else c = `<g transform="translate(14 9) scale(.62)">${marcador(tipo, cor)}</g>`;
   return `<svg class="ico-el" viewBox="0 0 28 18" aria-hidden="true">${c}</svg>`;
 }
@@ -948,29 +980,38 @@ function selo(x, y, txt, cor, s){
   return `<g transform="translate(${x.toFixed(1)} ${y.toFixed(1)}) scale(${s.toFixed(4)})" pointer-events="none"><rect x="${-w / 2}" y="-11" width="${w}" height="22" rx="11" fill="${cor}" stroke="#fff" stroke-width="2"/><text text-anchor="middle" y="4.5" font-size="13" font-weight="600" fill="#fff" font-family="Onest, system-ui, sans-serif">${esc(txt)}</text></g>`;
 }
 function elementoSVG(e, m, cfg){
-  const { W, H, s, modo } = cfg, u = px => (px * s).toFixed(2);
+  const { W, H, s, modo } = cfg, u = px => (px * s).toFixed(2), f = cfg.f || 1;
   const cor = m.cor || CORES[0], fraco = !!m.fraco, t = tipoEl(e.tipo);
-  const sel = !fraco && modo !== 'geral' && S.selEl === e.id;
-  const P = (e.pts || []).map(p => [p[0] * W, p[1] * H]);
+  const sel = !fraco && !m.estatico && modo !== 'geral' && S.selEl === e.id;
+  let P = (e.pts || []).map(p => [p[0] * W, p[1] * H]);
   if (!P.length) return '';
   const q = Number(e.qtd) || 0;
+  const pts = A => A.map(p => p[0].toFixed(1) + ',' + p[1].toFixed(1)).join(' ');
+  // traço tracejado usa ponta reta, senão a ponta redonda tampa o espaço entre os painéis
+  const L = (A, stroke, w, extra = '', tag = 'polyline') => `<${tag} points="${pts(A)}" fill="none" stroke="${stroke}" stroke-width="${u(w)}" stroke-linejoin="round" stroke-linecap="${extra.includes('dasharray') ? 'butt' : 'round'}" ${extra}/>`;
+  const grade = (A, tag) => L(A, '#fff', 6, '', tag) + L(A, cor, 3.5, `stroke-dasharray="${u(8)} ${u(3)}"`, tag);
   let g = '';
-  if (t.forma === 'linha' || t.forma === 'area') {
-    const tag = t.forma === 'area' ? 'polygon' : 'polyline', pts = P.map(p => p[0].toFixed(1) + ',' + p[1].toFixed(1)).join(' ');
-    // traço tracejado usa ponta reta, senão a ponta redonda tampa o espaço entre os painéis
-    const L = (stroke, w, extra = '') => `<${tag} points="${pts}" fill="none" stroke="${stroke}" stroke-width="${u(w)}" stroke-linejoin="round" stroke-linecap="${t.forma === 'area' || extra.includes('dasharray') ? 'butt' : 'round'}" ${extra}/>`;
-    if (sel) g += L('#0a0a0a', 20, 'stroke-opacity=".2"');
-    if (t.forma === 'area') g += `<polygon points="${pts}" fill="${cor}" fill-opacity="${fraco ? .1 : .2}"/>`;
-    if (e.tipo === 'pranchao') g += L('#0a0a0a', 13) + L('#fff', 10) + L(cor, 10, `stroke-opacity=".6" stroke-dasharray="${u(9)} ${u(2)}"`);
-    else g += L('#fff', 10) + L(cor, 6, `stroke-dasharray="${u(11)} ${u(4)}"`);
-    g += `<${tag} points="${pts}" fill="${t.forma === 'area' ? 'transparent' : 'none'}" stroke="transparent" stroke-width="${u(24)}"/>`;
-    if (q && !fraco) { const [x, y] = t.forma === 'area' ? centroDe(P) : meioDaLinha(P); g += selo(x, y, String(q), cor, s); }
+  const corr = e.tipo === 'baia' && P.length === 2, area = e.tipo === 'baia' && P.length >= 3; // área = baia da versão anterior
+  if (corr) {
+    const c = corredor(P, e.larg, W);
+    if (sel) g += L(c.poly, '#0a0a0a', 14, 'stroke-opacity=".18"', 'polygon');
+    g += `<polygon points="${pts(c.poly)}" fill="${cor}" fill-opacity="${fraco ? .07 : .14}"/>` + grade(c.l1) + grade(c.l2);
+    g += `<polygon points="${pts(c.poly)}" fill="transparent" stroke="transparent" stroke-width="${u(16)}"/>`;
+    if (q && !fraco) g += selo((P[0][0] + P[1][0]) / 2, (P[0][1] + P[1][1]) / 2, String(q), cor, s * .85 * f);
+  } else if (t.forma === 'linha' || area) {
+    const tag = area ? 'polygon' : 'polyline';
+    if (sel) g += L(P, '#0a0a0a', 14, 'stroke-opacity=".18"', tag);
+    if (area) g += `<polygon points="${pts(P)}" fill="${cor}" fill-opacity="${fraco ? .07 : .14}"/>`;
+    g += grade(P, tag);
+    g += `<${tag} points="${pts(P)}" fill="${area ? 'transparent' : 'none'}" stroke="transparent" stroke-width="${u(22)}"/>`;
+    if (q && !fraco) { const [x, y] = area ? centroDe(P) : meioDaLinha(P); g += selo(x, y, String(q), cor, s * .85 * f); }
   } else {
-    const [x, y] = P[0];
-    g += `<g transform="translate(${x.toFixed(1)} ${y.toFixed(1)}) scale(${s.toFixed(4)})"><circle r="20" fill="transparent"/>${marcador(e.tipo, cor, sel)}</g>`;
-    if (q > 1 && !fraco) g += selo(x + 15 * s, y - 15 * s, String(q), cor, s * .85);
+    if (P.length > 1) P = [meioDaLinha(P)];
+    const [x, y] = P[0], k = s * .8 * f;
+    g += `<g transform="translate(${x.toFixed(1)} ${y.toFixed(1)}) scale(${k.toFixed(4)})"><circle r="22" fill="transparent"/>${marcador(e.tipo, cor, sel)}</g>`;
+    if (q > 1 && !fraco) g += selo(x + 13 * s * f, y - 13 * s * f, String(q), cor, s * .75 * f);
   }
-  const clicavel = !fraco && modo !== 'estatico' ? ` data-el="${esc(e.id)}" data-mid="${esc(m.id)}"` : '';
+  const clicavel = !fraco && !m.estatico && modo !== 'estatico' ? ` data-el="${esc(e.id)}" data-mid="${esc(m.id)}"` : '';
   return `<g${clicavel}${fraco ? ' opacity=".4"' : ''}>${g}</g>`;
 }
 function desenhoSVG(cfg){
@@ -981,11 +1022,11 @@ function desenhoSVG(cfg){
   if (S.ferramenta && L.length) {
     const area = t.forma === 'area';
     const pts = L.map(p => (p[0] * W).toFixed(1) + ',' + (p[1] * H).toFixed(1)).join(' ');
-    out += `<${area && L.length >= 3 ? 'polygon' : 'polyline'} points="${pts}" fill="${area ? 'rgba(10,10,10,.08)' : 'none'}" stroke="#0a0a0a" stroke-width="${u(3)}" stroke-dasharray="${u(8)} ${u(5)}" stroke-linejoin="round" pointer-events="none"/>`;
-    out += L.map((p, i) => { const primeiro = area && i === 0; return `<circle cx="${(p[0] * W).toFixed(1)}" cy="${(p[1] * H).toFixed(1)}" r="${u(primeiro ? 10 : 6)}" fill="${primeiro ? '#fff' : '#0a0a0a'}" stroke="${primeiro ? '#0a0a0a' : '#fff'}" stroke-width="${u(primeiro ? 3 : 2)}" pointer-events="none"/>`; }).join('');
+    out += `<${area && L.length >= 3 ? 'polygon' : 'polyline'} points="${pts}" fill="${area ? 'rgba(10,10,10,.08)' : 'none'}" stroke="#0a0a0a" stroke-width="${u(2)}" stroke-dasharray="${u(6)} ${u(4)}" stroke-linejoin="round" pointer-events="none"/>`;
+    out += L.map((p, i) => { const primeiro = area && i === 0; return `<circle cx="${(p[0] * W).toFixed(1)}" cy="${(p[1] * H).toFixed(1)}" r="${u(primeiro ? 9 : 5)}" fill="${primeiro ? '#fff' : '#0a0a0a'}" stroke="${primeiro ? '#0a0a0a' : '#fff'}" stroke-width="${u(2)}" pointer-events="none"/>`; }).join('');
   }
   const sel = !S.ferramenta && elSelecionado();
-  if (sel) out += sel.pts.map((p, i) => `<circle class="alca" data-h="${i}" cx="${(p[0] * W).toFixed(1)}" cy="${(p[1] * H).toFixed(1)}" r="${u(11)}" fill="#fff" stroke="#0a0a0a" stroke-width="${u(2.5)}"/>`).join('');
+  if (sel) out += sel.pts.map((p, i) => `<circle class="alca" data-h="${i}" cx="${(p[0] * W).toFixed(1)}" cy="${(p[1] * H).toFixed(1)}" r="${u(9)}" fill="#fff" stroke="#0a0a0a" stroke-width="${u(2)}"/>`).join('');
   return out;
 }
 let ultimaPlanta = null; // para redesenhar durante o arrasto de um ponto
@@ -994,9 +1035,15 @@ function plantaHTML(nivel, lista, modo, titulo){
   const pl = S.plantas?.[nivel];
   if (!pl) return `<div class="planta-vazia">A planta do Nível ${nivel} ainda não foi enviada.${podeMudar() ? ' Envie em <b>Montagens → Plantas da arena</b>.' : ''}</div>`;
   const W = 1000, H = Math.round(1000 * pl.h / pl.w);
-  const cfg = { W, H, modo, lista, s: 1000 / (larguraBase() * S.zoom) };
+  const m = lista[lista.length - 1];
+  // pórticos fixos do nível aparecem em toda planta (menos quando estão sendo editados)
+  const fixos = S.view === 'fixos' ? [] : (S.fixos?.[nivel] || []);
+  const camadas = fixos.length ? [{ id: '__fixos', cor: COR_FIXO, estatico: true, desenho: { elementos: fixos } }, ...lista] : lista;
+  // f: adesivos e números encolhem quando a planta aparece pequena (celular sem zoom)
+  const larguraTela = larguraBase() * S.zoom;
+  const cfg = { W, H, modo, lista: camadas, s: 1000 / larguraTela, f: Math.min(1, Math.max(.6, larguraTela / 900)) };
   ultimaPlanta = cfg;
-  const ed = modo === 'editar', cheia = S.telaCheia, t = tipoEl(S.ferramenta), m = lista[lista.length - 1];
+  const ed = modo === 'editar', cheia = S.telaCheia, t = tipoEl(S.ferramenta);
   const ctrl = `<div class="planta-ctrl">
       ${cheia ? `<span class="planta-tit grow">${esc(titulo || 'Planta')} · Nível ${nivel}</span>` : `<span class="small muted grow">Nível ${nivel}</span>`}
       <button class="ib" data-a="zoom" data-d="-1" title="Diminuir" ${S.zoom <= 1 ? 'disabled' : ''}>−</button>
@@ -1006,13 +1053,13 @@ function plantaHTML(nivel, lista, modo, titulo){
     </div>`;
   let ferr = '', painel = '';
   if (ed) {
-    const minPts = t.forma === 'area' ? 3 : 2;
+    const tipos = tiposDaTela(), temTraco = tipos.some(k => TIPOS_EL[k].forma !== 'ponto');
     const dica = S.ferramenta
-      ? `<span>${t.dica}</span>${t.forma !== 'ponto' && S.linhaAtual.length >= minPts ? `<button class="btn pri" data-a="linha-ok">Concluir ${t.nome.toLowerCase()}</button>` : ''}${S.linhaAtual.length ? `<button class="btn ghost" data-a="traco-cancelar">Cancelar traço</button>` : ''}${t.forma === 'ponto' ? '<span>Toque no botão de novo para parar.</span>' : ''}`
+      ? `<span>${t.dica}</span>${t.forma === 'linha' && S.linhaAtual.length >= 2 ? `<button class="btn pri" data-a="linha-ok">Concluir ${t.nome.toLowerCase()}</button>` : ''}${S.linhaAtual.length ? `<button class="btn ghost" data-a="traco-cancelar">Cancelar traço</button>` : ''}${t.forma !== 'linha' ? '<span>Para parar, toque no botão de novo.</span>' : ''}`
       : `<span>Escolha o que marcar e toque na planta. Toque numa marcação para editar ou apagar; arraste as bolinhas para ajustar. Aproxime com + ou com dois dedos.</span>`;
-    ferr = `<div class="ferrs">${ORDEM_TIPOS.map(k => `<button class="btn ${S.ferramenta === k ? 'on' : ''}" data-a="ferr" data-v="${k}" aria-pressed="${S.ferramenta === k}">${iconeTipo(k, m.cor || CORES[0])}${TIPOS_EL[k].nome}</button>`).join('')}
+    ferr = `<div class="ferrs">${tipos.map(k => `<button class="btn ${S.ferramenta === k ? 'on' : ''}" data-a="ferr" data-v="${k}" aria-pressed="${S.ferramenta === k}">${iconeTipo(k, m.cor || CORES[0])}${TIPOS_EL[k].nome}</button>`).join('')}
         <button class="btn ghost" data-a="desfazer">Desfazer</button>
-        <button class="btn ghost ${S.alinhar ? 'on' : ''}" data-a="alinhar" aria-pressed="${S.alinhar}" title="Deixa os traços retos (horizontal, vertical e 45°)">Alinhar retas</button>
+        ${temTraco ? `<button class="btn ghost ${S.alinhar ? 'on' : ''}" data-a="alinhar" aria-pressed="${S.alinhar}" title="Deixa os traços retos (horizontal, vertical e 45°)">Alinhar retas</button>` : ''}
         <button class="btn ghost danger" data-a="limpar-des">${S.confirm === 'limpar-des' ? 'Apagar tudo mesmo?' : 'Limpar tudo'}</button></div>
       <div class="dica">${dica}</div>`;
     const e = elSelecionado();
@@ -1023,8 +1070,9 @@ function plantaHTML(nivel, lista, modo, titulo){
         <div class="row" style="align-items:flex-end">
           ${te.un ? `<label class="fld" style="flex:0 1 140px">${te.fem ? 'Quantas' : 'Quantos'} ${te.un[1]}<input type="number" min="0" inputmode="numeric" id="el-qtd" data-elf="qtd" value="${e.qtd ?? ''}" placeholder="0"></label>` : ''}
           ${te.un && mats.length ? `<label class="fld" style="flex:1 1 200px">Conta no material<select id="el-mat" data-elf="mat"><option value="">Não contar</option>${mats.map(x => `<option value="${esc(x.id)}" ${e.mat === x.id ? 'selected' : ''}>${esc(matLabel(x))}</option>`).join('')}</select></label>` : ''}
-          <label class="fld" style="flex:1 1 220px">Observação<input type="text" id="el-nota" data-elf="nota" value="${esc(e.nota || '')}" placeholder="Ex.: capa virada para a rua"></label>
+          <label class="fld" style="flex:1 1 220px">Observação<input type="text" id="el-nota" data-elf="nota" value="${esc(e.nota || '')}" placeholder="${e.tipo === 'portico' ? 'Ex.: Pórtico 2 · Portão A' : 'Ex.: capa virada para a rua'}"></label>
         </div>
+        ${e.tipo === 'baia' && e.pts.length === 2 ? `<label class="fld">Largura do corredor<input type="range" id="el-larg" data-elf="larg" min="0.004" max="0.04" step="0.001" value="${e.larg || LARG_PADRAO}"></label>` : ''}
         <div class="row"><button class="btn ghost danger" data-a="el-del">${S.confirm === 'el-del' ? 'Apagar mesmo?' : 'Apagar esta marcação'}</button></div>
       </div>`;
     }
@@ -1053,7 +1101,7 @@ function listaElementos(m){
   return `<ul class="els">${els.map(e => `<li><button class="el-li ${S.selEl === e.id ? 'on' : ''}" data-a="sel-el" data-v="${esc(e.id)}">${iconeTipo(e.tipo, m.cor || CORES[0])}<span class="grow"><b>${tipoEl(e.tipo).nome}</b>${descrEl(e, m) ? `<span class="small muted">${descrEl(e, m)}</span>` : ''}</span></button></li>`).join('')}</ul>`;
 }
 function legendaTipos(){
-  return `<div class="legenda-mont small muted">${ORDEM_TIPOS.map(k => `<span style="display:inline-flex;align-items:center;gap:6px">${iconeTipo(k, '#717784')}${TIPOS_EL[k].nome}</span>`).join('')}</div>`;
+  return `<div class="legenda-mont small muted">${[...ORDEM_TIPOS, 'portico'].map(k => `<span style="display:inline-flex;align-items:center;gap:6px">${iconeTipo(k, k === 'portico' ? COR_FIXO : '#717784')}${TIPOS_EL[k].nome}${k === 'portico' ? ' (fixo)' : ''}</span>`).join('')}</div>`;
 }
 
 // Zoom que mantém parado o ponto (cx, cy) da tela
@@ -1151,6 +1199,7 @@ function viewMontagens(){
     <p class="small muted" style="margin:0">Imagem de cada nível (PNG, JPG ou WEBP). Ficam guardadas no servidor, só para quem tem a senha.</p>
     ${[0, 1, 2, 3].map(n => { const pl = S.plantas?.[n]; return `<div class="row">
       <span class="grow"><b>Nível ${n}</b> <span class="small muted">${pl ? 'enviada em ' + new Date(pl.atualizadoEm).toLocaleDateString('pt-BR') : 'ainda não enviada'}</span></span>
+      ${pl ? `<button class="btn ghost" data-a="fixos-editar" data-v="${n}">Pórticos (${(S.fixos?.[n] || []).length})</button>` : ''}
       <label class="btn">${pl ? 'Trocar planta' : 'Enviar planta'}<input type="file" accept="image/png,image/jpeg,image/webp" id="planta-in-${n}" data-planta="${n}" hidden></label>
     </div>`; }).join('')}
   </section>` : '';
@@ -1161,6 +1210,7 @@ function viewMontagens(){
     <div class="row"><h2 class="grow">Visão da planta</h2>
       <div class="filters">${[0, 1, 2, 3].map(n => `<button class="fchip" data-a="nivel-planta" data-v="${n}" aria-pressed="${S.nivelPlanta === n}">Nível ${n}</button>`).join('')}</div></div>
     ${plantaHTML(S.nivelPlanta, doNivel, 'geral', 'Todas as montagens')}
+    ${adm && S.plantas?.[S.nivelPlanta] ? `<div><button class="link" data-a="fixos-editar" data-v="${S.nivelPlanta}">${iconeTipo('portico', COR_FIXO)}Marcar pórticos fixos do Nível ${S.nivelPlanta} (${(S.fixos?.[S.nivelPlanta] || []).length})</button></div>` : ''}
     ${doNivel.length ? `<div class="legenda-mont">${doNivel.map(m => `<button class="link" data-a="go-mont-det" data-mid="${esc(m.id)}"><i class="dot" style="background:${m.cor || CORES[0]}"></i>${esc(m.titulo)}</button>`).join('')}</div>${legendaTipos()}` : `<p class="small muted" style="margin:0">Nenhuma montagem desenhada no Nível ${S.nivelPlanta}.</p>`}
   </section>
   <section style="display:flex;flex-direction:column;gap:10px"><h2>Modelos</h2>${cards}</section>
@@ -1238,6 +1288,33 @@ function viewMontagem(){
   </div>`;
 }
 
+// Pórticos fixos: editados como um "modelo" à parte, gravado em config/fixos
+function abrirFixos(n){
+  if (!podeMudar()) return;
+  S.mDraft = { id: '__fixos', titulo: 'Pórticos fixos', nivel: n, cor: COR_FIXO, materiais: [], desenho: { elementos: clone(S.fixos?.[n] || []) } };
+  S.mEdit = true; S.view = 'fixos'; limparDesenhoAtivo(); S.ferramenta = 'portico'; S.zoom = 1; S.confirm = null;
+  render(); window.scrollTo(0, 0);
+}
+function viewFixos(){
+  if (!podeMudar() || !S.mDraft || S.mDraft.id !== '__fixos') return `<div class="panel empty">Só o administrador marca os pórticos. <button class="link" data-a="fixos-voltar">Voltar</button></div>`;
+  const n = S.mDraft.nivel;
+  return `<button class="link" data-a="fixos-voltar">← Todas as montagens</button>
+  <div class="head"><h1>Pórticos fixos · Nível ${n}</h1>
+    <p class="muted" style="margin:0;max-width:62ch">Os pórticos ficam sempre no mesmo lugar. Marque aqui uma vez e eles aparecem em todas as montagens do Nível ${n}.</p></div>
+  <section class="panel panel-pad" style="display:flex;flex-direction:column;gap:10px">
+    ${plantaHTML(n, [S.mDraft], 'editar', 'Pórticos fixos')}
+    ${listaElementos(S.mDraft)}
+  </section>
+  <div class="row"><button class="btn pri" data-a="fixos-salvar">Salvar pórticos</button><button class="btn ghost" data-a="fixos-voltar">Cancelar</button></div>`;
+}
+function salvarFixos(){
+  const n = S.mDraft.nivel;
+  const novo = { ...(S.fixos || {}), [n]: limparEls(S.mDraft.desenho.elementos).map(e => ({ id: e.id, tipo: 'portico', pts: e.pts, nota: e.nota })) };
+  delete novo.id;
+  S.fixos = novo; S.mEdit = false; limparDesenhoAtivo(); S.view = 'montagens'; S.nivelPlanta = n;
+  gravar('config/fixos', () => db.doc('config/fixos').set(novo)).then(() => toast('Pórticos salvos'));
+  render(); window.scrollTo(0, 0);
+}
 function abrirMontagem(mid, origem){
   S.montId = mid; S.mEdit = false; S.mNovo = false; limparDesenhoAtivo(); S.zoom = 1;
   S.voltar = origem === 'check' ? { view: 'check' } : { view: 'montagens' };
@@ -1250,7 +1327,7 @@ function editarMontagem(novo){
     S.montId = S.mDraft.id; S.voltar = { view: 'montagens' }; S.view = 'montagem';
   } else {
     const m = montagem(S.montId); if (!m) return;
-    S.mDraft = clone(m); S.mDraft.desenho = { elementos: clone(elementosDe(m.desenho)) };
+    S.mDraft = clone(m); S.mDraft.desenho = { elementos: normalizarEls(clone(elementosDe(m.desenho))) };
   }
   S.mNovo = !!novo; S.mEdit = true; limparDesenhoAtivo(); S.zoom = 1; S.confirm = null;
   render(); window.scrollTo(0, 0);
@@ -1260,8 +1337,8 @@ function salvarMontagem(){
   if (!String(d.titulo || '').trim()) { toast('Dê um nome para a montagem'); return; }
   // traço não concluído entra junto
   const t = tipoEl(S.ferramenta);
-  if (S.ferramenta && t.forma !== 'ponto' && S.linhaAtual.length >= (t.forma === 'area' ? 3 : 2)) d.desenho.elementos.push({ id: uid(), tipo: S.ferramenta, pts: S.linhaAtual, qtd: null, mat: matPadrao(S.ferramenta), nota: '' });
-  d.desenho = { elementos: (d.desenho.elementos || []).map(e => ({ id: e.id, tipo: e.tipo, pts: e.pts, qtd: e.qtd == null || e.qtd === '' ? null : Math.max(0, Math.round(Number(e.qtd) || 0)), mat: e.mat || '', nota: String(e.nota || '').trim() })) };
+  if (S.ferramenta && t.forma === 'linha' && S.linhaAtual.length >= 2) d.desenho.elementos.push({ id: uid(), tipo: S.ferramenta, pts: S.linhaAtual, qtd: null, mat: matPadrao(S.ferramenta), nota: '' });
+  d.desenho = { elementos: limparEls(d.desenho.elementos) };
   d.titulo = d.titulo.trim(); d.nivel = Number(d.nivel) || 0;
   d.materiais = (d.materiais || []).map(x => ({ ...x, nome: String(x.nome || '').trim(), qtd: Math.max(0, Math.round(Number(x.qtd) || 0)) }));
   d.atualizadoEm = Date.now();
@@ -1328,13 +1405,14 @@ function cliqueNaPlanta(ev, svg){
   if (modo === 'editar' && S.ferramenta && S.mDraft) {
     const t = tipoEl(S.ferramenta);
     if (t.forma === 'ponto') {
-      const e = { id: uid(), tipo: S.ferramenta, pts: [arred(p)], qtd: S.ferramenta === 'portico' ? 1 : null, mat: matPadrao(S.ferramenta), nota: '' };
+      const e = { id: uid(), tipo: S.ferramenta, pts: [arred(p)], qtd: t.un ? 1 : null, mat: matPadrao(S.ferramenta), nota: '' };
       S.mDraft.desenho.elementos.push(e); S.selEl = e.id; render(); return;
     }
     const L = S.linhaAtual;
-    if (t.forma === 'area' && L.length >= 3 && Math.hypot((p[0] - L[0][0]) * r.width, (p[1] - L[0][1]) * r.height) < 18) { concluirTraco(); return; }
     if (S.alinhar && L.length) p = alinharPonto(L[L.length - 1], p, r);
-    L.push(arred(p)); render(); return;
+    L.push(arred(p));
+    if (t.forma === 'corredor' && L.length === 2) { concluirTraco(); return; }
+    render(); return;
   }
   const alvo = ev.target.closest('[data-el]');
   if (modo === 'geral') { if (alvo) abrirMontagem(alvo.dataset.mid, 'montagens'); return; }
@@ -1342,10 +1420,12 @@ function cliqueNaPlanta(ev, svg){
 }
 function concluirTraco(){
   const tipo = S.ferramenta, t = tipoEl(tipo), L = S.linhaAtual;
-  if (!S.mDraft || t.forma === 'ponto' || L.length < (t.forma === 'area' ? 3 : 2)) return;
+  if (!S.mDraft || t.forma === 'ponto' || L.length < 2) return;
   const e = { id: uid(), tipo, pts: L, qtd: null, mat: matPadrao(tipo), nota: '' };
+  if (t.forma === 'corredor') e.larg = S.ultimaLarg || LARG_PADRAO;
   S.mDraft.desenho.elementos.push(e);
-  S.linhaAtual = []; S.ferramenta = null; S.selEl = e.id;
+  // o corredor continua com a ferramenta ligada, para fazer vários seguidos
+  S.linhaAtual = []; if (t.forma !== 'corredor') S.ferramenta = null; S.selEl = e.id;
   render();
 }
 
@@ -1476,6 +1556,7 @@ function ouvirDados(){
     render();
   }, () => { if (S.montagens === undefined) S.montagens = []; });
   db.doc('config/plantas').onSnapshot(snap => { S.plantas = (snap.exists && snap.data()) || {}; render(); }, () => {});
+  db.doc('config/fixos').onSnapshot(snap => { S.fixos = (snap.exists && snap.data()) || {}; render(); }, () => {});
 }
 })();
 </script>
