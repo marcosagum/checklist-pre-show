@@ -173,11 +173,32 @@ select:focus{border-color:var(--brand-light);outline:none}
 .legenda-mont{display:flex;flex-wrap:wrap;gap:4px 18px}
 .planta{display:flex;flex-direction:column;gap:6px}
 .planta-ctrl{display:flex;align-items:center;gap:6px}
-.planta-wrap{overflow:auto;border:1px solid var(--line);border-radius:var(--r-field);background:#fff;max-height:75vh;-webkit-overflow-scrolling:touch}
+.planta-wrap{overflow:auto;border:1px solid var(--line);border-radius:var(--r-field);background:#fff;max-height:75vh;-webkit-overflow-scrolling:touch;touch-action:pan-x pan-y;overscroll-behavior:contain}
 .planta-in{position:relative;min-width:100%}
-.planta-in img{display:block;width:100%;height:auto;max-width:none;user-select:none;-webkit-user-select:none}
-.planta-in svg{position:absolute;inset:0;width:100%;height:100%}
+.planta-in img{display:block;width:100%;height:auto;max-width:none;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
+.planta-in svg{position:absolute;inset:0;width:100%;height:100%;user-select:none;-webkit-user-select:none}
 .planta-in svg.desenhando{cursor:crosshair}
+.planta-in svg .alca{touch-action:none;cursor:grab}
+.planta-in svg [data-el]{cursor:pointer}
+.planta.cheia{position:fixed;inset:0;z-index:15;background:var(--paper);gap:8px;padding:max(10px,env(safe-area-inset-top,0px)) max(10px,env(safe-area-inset-right,0px)) max(10px,env(safe-area-inset-bottom,0px)) max(10px,env(safe-area-inset-left,0px))}
+.planta.cheia .planta-wrap{flex:1 1 auto;max-height:none;min-height:0}
+.planta.cheia > *{flex:none}
+.planta.cheia .ferrs{flex-wrap:nowrap;overflow-x:auto;padding-bottom:2px}
+.planta.cheia .el-ed{max-height:40vh;overflow:auto;flex:none}
+.planta-tit{font-weight:500;font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+body.sem-rolagem{overflow:hidden}
+.ferrs{display:flex;flex-wrap:wrap;gap:6px}
+.ferrs .btn{padding:0 14px;white-space:nowrap;flex:none}
+.ico-el{width:28px;height:18px;flex:none;display:block}
+.dica{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;font-size:13px;color:var(--muted);min-height:30px}
+.dica .btn{min-height:36px;padding:0 14px}
+.el-ed{display:flex;flex-direction:column;gap:10px;padding:12px 14px;border:1.5px solid var(--ink);border-radius:var(--r-field);background:var(--card)}
+.el-nome{display:inline-flex;align-items:center;gap:8px;font-weight:500;font-size:15px}
+.els{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}
+.el-li{display:flex;align-items:center;gap:10px;width:100%;text-align:left;border:1px solid var(--line);background:var(--card);border-radius:var(--r-field);padding:9px 12px;font-size:14px;color:var(--ink)}
+.el-li:hover,.el-li.on{border-color:var(--ink)}
+.el-li .grow{display:flex;flex-direction:column;gap:2px}
+.soma-des{flex-basis:100%;font-size:12px;color:var(--muted);display:flex;flex-wrap:wrap;gap:4px 10px;align-items:center}
 .planta-vazia{padding:28px 18px;text-align:center;color:var(--muted);border:1px dashed var(--line);border-radius:var(--r-field)}
 .fotos{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px;margin-top:10px}
 .fotos img{display:block;width:100%;aspect-ratio:4/3;object-fit:cover;border-radius:var(--r-field);background:var(--chip)}
@@ -258,7 +279,8 @@ const S = {
   draft: {}, novo: { evento:'', data:'', resp:'' },
   copyText: null, semDb: false, lento: false, erro: '',
   montagens: undefined, plantas: {}, montId: null, mDraft: null, mEdit: false, mNovo: false,
-  ferramenta: null, linhaAtual: [], zoom: 1, nivelPlanta: 0, voltar: null, enviando: 0
+  ferramenta: null, linhaAtual: [], zoom: 1, nivelPlanta: 0, voltar: null, enviando: 0,
+  selEl: null, telaCheia: false, alinhar: true, ignorarClique: false
 };
 
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -336,6 +358,27 @@ function render(){
   app.innerHTML = html;
   const pw2 = document.getElementById('planta-wrap');
   if (pw2 && rolagem) { pw2.scrollLeft = rolagem[0]; pw2.scrollTop = rolagem[1]; }
+  // marcação recém-selecionada: rola a planta até ela, se ficou escondida (o painel ocupa espaço)
+  if (pw2 && S.selEl && S.selEl !== render.selVisto) {
+    const g = pw2.querySelector(`[data-el="${CSS.escape(S.selEl)}"]`);
+    if (g) {
+      const a = g.getBoundingClientRect(), b = pw2.getBoundingClientRect();
+      if (a.top < b.top || a.bottom > b.bottom || a.left < b.left || a.right > b.right) {
+        pw2.scrollLeft += (a.left + a.width / 2) - (b.left + b.width / 2);
+        pw2.scrollTop += (a.top + a.height / 2) - (b.top + b.height / 2);
+      }
+    }
+  }
+  render.selVisto = S.selEl;
+  // tela cheia: some junto com a planta (ao trocar de tela) e trava a rolagem da página
+  const cheia = !!document.querySelector('.planta.cheia');
+  if (!cheia && S.telaCheia) S.telaCheia = false;
+  if (!cheia && document.fullscreenElement) document.exitFullscreen().catch(() => {});
+  document.body.classList.toggle('sem-rolagem', cheia);
+  // as espessuras do desenho dependem da largura real da planta: corrige na primeira vez
+  if (pw2 && Math.abs(pw2.clientWidth - (S.baseUsada || 0)) > 40 && !render.ajustando) {
+    render.ajustando = true; requestAnimationFrame(() => { render(); render.ajustando = false; });
+  }
   if (foco){ const el = document.getElementById(foco.id); if (el){ el.focus(); try { if (foco.a != null) el.setSelectionRange(foco.a, foco.b); } catch(_){} } }
 }
 
@@ -567,15 +610,15 @@ app.addEventListener('click', ev => {
   const b = ev.target.closest('[data-a]'); if (!b || b.disabled) return;
   const a = b.dataset.a, t = tipoAtual();
   if (b.tagName === 'INPUT') return;
-  if (!['del-sec', 'del-grp', 'del-item', 'del-ck', 'mont-excluir', 'foto-del'].includes(a) && S.confirm) S.confirm = null;
+  if (!['del-sec', 'del-grp', 'del-item', 'del-ck', 'mont-excluir', 'foto-del', 'limpar-des', 'el-del'].includes(a) && S.confirm) S.confirm = null;
   switch (a){
     case 'go-lista': irPara('lista'); break;
     // montagens
     case 'go-mont-det': abrirMontagem(b.dataset.mid, S.view === 'check' ? 'check' : 'montagens'); break;
-    case 'mont-voltar': { const v = S.voltar?.view || 'montagens'; S.mEdit = false; S.ferramenta = null; S.linhaAtual = []; S.view = v === 'check' && !atual() ? 'montagens' : v; render(); window.scrollTo(0, 0); break; }
+    case 'mont-voltar': { const v = S.voltar?.view || 'montagens'; S.mEdit = false; limparDesenhoAtivo(); S.view = v === 'check' && !atual() ? 'montagens' : v; render(); window.scrollTo(0, 0); break; }
     case 'mont-novo': editarMontagem(true); break;
     case 'mont-editar': editarMontagem(false); break;
-    case 'mont-cancelar': S.mEdit = false; S.ferramenta = null; S.linhaAtual = []; if (S.mNovo) { S.mNovo = false; S.view = 'montagens'; } render(); break;
+    case 'mont-cancelar': S.mEdit = false; limparDesenhoAtivo(); if (S.mNovo) { S.mNovo = false; S.view = 'montagens'; } render(); break;
     case 'mont-salvar': salvarMontagem(); break;
     case 'mont-excluir': {
       if (precisaConfirmar('del-mont')) return;
@@ -583,21 +626,31 @@ app.addEventListener('click', ev => {
       gravar('montagens/' + id, () => db.doc('montagens/' + id).delete()).then(() => toast('Modelo excluído'));
       render(); break; }
     case 'nivel-planta': S.nivelPlanta = +b.dataset.v; S.zoom = 1; render(); break;
-    case 'zoom': { const z = [1, 1.5, 2, 3, 4], i = z.indexOf(S.zoom); S.zoom = z[Math.max(0, Math.min(z.length - 1, (i < 0 ? 0 : i) + (+b.dataset.d)))]; render(); break; }
+    case 'zoom': {
+      const d = +b.dataset.d;
+      const z = d > 0 ? (ZOOMS.find(x => x > S.zoom + .01) ?? ZMAX) : ([...ZOOMS].reverse().find(x => x < S.zoom - .01) ?? 1);
+      zoomEm(z); break; }
+    case 'tela-cheia': abrirTelaCheia(); break;
+    case 'tela-fechar': fecharTelaCheia(); break;
     case 'cor': S.mDraft.cor = b.dataset.v; render(); break;
     case 'mat-add': S.mDraft.materiais = [...(S.mDraft.materiais || []), { id: uid(), nome: 'Grade de contenção', material: 'ferro', capa: 'com', qtd: 0 }]; render(); break;
     case 'mat-del': S.mDraft.materiais = (S.mDraft.materiais || []).filter(x => x.id !== b.dataset.v); render(); break;
     case 'foto-del': { if (precisaConfirmar(b.dataset.k)) return; S.mDraft.fotos = (S.mDraft.fotos || []).filter(f => f !== b.dataset.v); render(); break; }
-    case 'ferr': S.ferramenta = S.ferramenta === b.dataset.v ? null : b.dataset.v; if (S.ferramenta !== 'linha') S.linhaAtual = []; render(); break;
-    case 'linha-ok': if (S.linhaAtual.length >= 2) S.mDraft.desenho.linhas.push(S.linhaAtual); S.linhaAtual = []; render(); break;
+    case 'mat-usar': { const x = (S.mDraft.materiais || []).find(y => y.id === b.dataset.v); if (x) x.qtd = somaDesenho(S.mDraft, x.id); render(); break; }
+    case 'ferr': S.ferramenta = S.ferramenta === b.dataset.v ? null : b.dataset.v; S.linhaAtual = []; S.selEl = null; render(); break;
+    case 'linha-ok': concluirTraco(); break;
+    case 'traco-cancelar': S.linhaAtual = []; render(); break;
+    case 'alinhar': S.alinhar = !S.alinhar; render(); break;
     case 'desfazer': {
-      const d = S.mDraft.desenho;
+      const els = S.mDraft.desenho.elementos;
       if (S.linhaAtual.length) S.linhaAtual.pop();
-      else if (S.ferramenta === 'ponto' && d.pontos.length) d.pontos.pop();
-      else if (d.linhas.length) d.linhas.pop();
-      else d.pontos.pop();
+      else if (els.length) { const tirado = els.pop(); if (S.selEl === tirado.id) S.selEl = null; }
       render(); break; }
-    case 'limpar-des': S.mDraft.desenho = { linhas: [], pontos: [] }; S.linhaAtual = []; render(); break;
+    case 'limpar-des': { if (precisaConfirmar('limpar-des')) return; S.mDraft.desenho.elementos = []; S.linhaAtual = []; S.selEl = null; render(); break; }
+    case 'sel-el': S.selEl = b.dataset.v || null; S.ferramenta = null; S.linhaAtual = []; render(); break;
+    case 'el-del': {
+      if (precisaConfirmar('el-del')) return;
+      S.mDraft.desenho.elementos = S.mDraft.desenho.elementos.filter(e => e.id !== S.selEl); S.selEl = null; render(); break; }
     case 'planta-svg': cliqueNaPlanta(ev, b); break;
     case 'pedir-admin': S.pedirSenha = true; render(); { const el = document.getElementById('senha'); if (el) el.focus(); } break;
     case 'cancel-senha': S.pedirSenha = false; render(); break;
@@ -641,7 +694,7 @@ document.getElementById('tabs').addEventListener('click', ev => {
   const b = ev.target.closest('[data-a]'); if (!b) return;
   irPara(b.dataset.a === 'go-modelo' ? 'modelo' : b.dataset.a === 'go-mont' ? 'montagens' : 'lista');
 });
-function irPara(v){ S.view = v; S.confirm = null; S.addForm = null; S.copyText = null; S.mEdit = false; S.ferramenta = null; S.linhaAtual = []; S.zoom = 1; render(); window.scrollTo(0, 0); }
+function irPara(v){ S.view = v; S.confirm = null; S.addForm = null; S.copyText = null; S.mEdit = false; limparDesenhoAtivo(); S.zoom = 1; render(); window.scrollTo(0, 0); }
 
 const obsTimers = {};
 app.addEventListener('input', ev => {
@@ -652,6 +705,7 @@ app.addEventListener('input', ev => {
   if (el.type === 'checkbox') { S.draft[el.id] = el.checked; return; }
   if (el.dataset.mf && S.mDraft) { S.mDraft[el.dataset.mf] = el.value; return; }
   if (el.dataset.mat && S.mDraft) { const x = (S.mDraft.materiais || []).find(y => y.id === el.dataset.mat); if (x) x[el.dataset.matf] = el.value; return; }
+  if (el.dataset.elf && S.mDraft) { const e = elSelecionado(); if (e) e[el.dataset.elf] = el.value; return; }
   if (el.dataset.qsMid) return;
   S.draft[el.id] = el.value;
   if (el.classList.contains('obs-in')) {
@@ -675,7 +729,11 @@ app.addEventListener('change', ev => {
   if (el.id === 'foto-in') { const fs = [...el.files]; el.value = ''; enviarFotos(fs); return; }
   if (el.dataset.planta) { const f = el.files[0]; el.value = ''; if (f) enviarPlanta(el.dataset.planta, f); return; }
   if (el.dataset.mf && S.mDraft) { S.mDraft[el.dataset.mf] = el.dataset.mf === 'nivel' ? +el.value : el.value; if (el.dataset.mf === 'nivel') { S.linhaAtual = []; render(); } return; }
-  if (el.dataset.mat && S.mDraft) { const x = (S.mDraft.materiais || []).find(y => y.id === el.dataset.mat); if (x) x[el.dataset.matf] = el.value; return; }
+  if (el.dataset.mat && S.mDraft) { const x = (S.mDraft.materiais || []).find(y => y.id === el.dataset.mat); if (x) x[el.dataset.matf] = el.value; render(); return; }
+  if (el.dataset.elf && S.mDraft) {
+    const e = elSelecionado(); if (!e) return;
+    e[el.dataset.elf] = el.dataset.elf === 'qtd' ? (el.value === '' ? null : Math.max(0, Math.round(Number(el.value) || 0))) : el.value;
+    render(); return; }
   if (el.dataset.qsMid) {
     const ck = atual(); if (!ck) return;
     const n = el.value === '' ? null : Math.max(0, Math.round(Number(el.value) || 0));
@@ -794,7 +852,7 @@ function baixar(){
 
 // ---------- modelos de montagem ----------
 const CORES = ['#e11518', '#1d4ed8', '#15803d', '#b45309', '#7c3aed', '#0e7490', '#be185d', '#4d7c0f'];
-const NOMES_GRADE = ['Grade de contenção', 'Grade de fechamento', 'Barricada', 'Gradil', 'Unifila'];
+const NOMES_GRADE = ['Grade de contenção', 'Grade de fechamento', 'Barricada', 'Gradil', 'Unifila', 'Pranchão', 'Pórtico'];
 const fotoUrl = nome => 'api/arquivo/fotos/' + encodeURIComponent(nome);
 const montagem = id => (S.montagens || []).find(m => m.id === id);
 const montagensOrdenadas = () => [...(S.montagens || [])].sort((a, b) => (a.nivel - b.nivel) || String(a.titulo).localeCompare(String(b.titulo), 'pt-BR'));
@@ -826,34 +884,252 @@ function materialDoShow(ck){
   return { linhas, total: linhas.reduce((s, [, q]) => s + q, 0), montagens: mids.size };
 }
 
-// Planta com o desenho das montagens (linhas e pontos guardados de 0 a 1)
-function plantaHTML(nivel, lista, editavel){
+// ---------- desenho na planta ----------
+// Cada marcação: { id, tipo, pts: [[x, y], ...] de 0 a 1, qtd, mat (material da lista), nota }
+const TIPOS_EL = {
+  grade:    { nome: 'Grade', forma: 'linha', un: ['grade', 'grades'], fem: true, dica: 'Toque na planta ponto a ponto, seguindo o trajeto da grade.' },
+  baia:     { nome: 'Baia de grade', forma: 'area', un: ['grade', 'grades'], fem: true, dica: 'Toque em cada canto da baia. Para fechar, toque de novo no primeiro ponto (branco).' },
+  pranchao: { nome: 'Pranchão', forma: 'linha', un: ['pranchão', 'pranchões'], dica: 'Toque no começo e no fim do pranchão (ou ponto a ponto, se ele fizer curva).' },
+  portico:  { nome: 'Pórtico', forma: 'ponto', un: ['pórtico', 'pórticos'], dica: 'Toque na planta onde fica cada pórtico.' },
+  recolha:  { nome: 'Recolha de alimento', forma: 'ponto', un: null, dica: 'Toque na planta onde fica a recolha de alimento.' },
+};
+const ORDEM_TIPOS = ['grade', 'baia', 'pranchao', 'portico', 'recolha'];
+const tipoEl = t => TIPOS_EL[t] || { nome: 'Ponto', forma: 'ponto', un: null };
+const ZOOMS = [1, 1.5, 2, 3, 4, 6], ZMAX = 6;
+// Desenhos antigos (só linhas e pontos) viram grades e pontos
+function elementosDe(d){
+  if (Array.isArray(d?.elementos)) return d.elementos;
+  return [...(d?.linhas || []).map((l, i) => ({ id: 'l' + i, tipo: 'grade', pts: l })), ...(d?.pontos || []).map((p, i) => ({ id: 'p' + i, tipo: 'ponto', pts: [p] }))];
+}
+const qtdTxt = e => { const t = tipoEl(e.tipo), q = Number(e.qtd) || 0; return t.un && q ? `${q} ${q === 1 ? t.un[0] : t.un[1]}` : ''; };
+const somaDesenho = (m, matId) => elementosDe(m.desenho).reduce((s, e) => s + (e.mat === matId ? (Number(e.qtd) || 0) : 0), 0);
+const elSelecionado = () => S.mDraft && S.selEl ? (S.mDraft.desenho.elementos || []).find(e => e.id === S.selEl) : null;
+function matPadrao(tipo){
+  const mats = S.mDraft?.materiais || [];
+  const acha = re => mats.find(x => re.test(x.nome || ''))?.id || '';
+  if (tipo === 'pranchao') return acha(/pranch/i);
+  if (tipo === 'portico') return acha(/p[óo]rtico/i);
+  if (tipo === 'grade' || tipo === 'baia') return mats.find(x => !/pranch|p[óo]rtico/i.test(x.nome || ''))?.id || '';
+  return '';
+}
+function limparDesenhoAtivo(){ S.ferramenta = null; S.linhaAtual = []; S.selEl = null; S.telaCheia = false; }
+
+// Símbolo de pórtico, recolha e ponto (desenhado em pixels, centrado em 0,0)
+function marcador(tipo, cor, sel){
+  const halo = sel ? `<circle r="19" fill="#0a0a0a" fill-opacity=".22"/>` : '';
+  if (tipo === 'portico') return `${halo}<rect x="-12" y="-12" width="24" height="24" rx="6" fill="#fff" stroke="${cor}" stroke-width="3"/><path d="M-6 7V-1a6 6 0 0 1 12 0v8" fill="none" stroke="${cor}" stroke-width="2.6" stroke-linecap="round"/>`;
+  if (tipo === 'recolha') return `${halo}<circle r="12.5" fill="#fff" stroke="${cor}" stroke-width="3"/><path d="M-7 -1h14l-2.2 7.5h-9.6z" fill="${cor}"/><path d="M-3.5 -1.5l2.5-5.5M3.5 -1.5l-2.5-5.5" stroke="${cor}" stroke-width="2" stroke-linecap="round" fill="none"/>`;
+  return `${halo}<circle r="9" fill="${cor}" stroke="#fff" stroke-width="2.5"/>`;
+}
+// Ícone pequeno para botões, legenda e lista
+function iconeTipo(tipo, cor){
+  let c;
+  if (tipo === 'grade') c = `<line x1="2" y1="9" x2="26" y2="9" stroke="${cor}" stroke-width="4" stroke-dasharray="6 1.6"/>`;
+  else if (tipo === 'baia') c = `<rect x="3" y="3" width="22" height="12" fill="${cor}" fill-opacity=".18" stroke="${cor}" stroke-width="2.6" stroke-dasharray="5 1.4"/>`;
+  else if (tipo === 'pranchao') c = `<line x1="2" y1="9" x2="26" y2="9" stroke="#0a0a0a" stroke-width="9"/><line x1="3" y1="9" x2="25" y2="9" stroke="#fff" stroke-width="7"/><line x1="3" y1="9" x2="25" y2="9" stroke="${cor}" stroke-opacity=".6" stroke-width="7" stroke-dasharray="6 1.5"/>`;
+  else c = `<g transform="translate(14 9) scale(.62)">${marcador(tipo, cor)}</g>`;
+  return `<svg class="ico-el" viewBox="0 0 28 18" aria-hidden="true">${c}</svg>`;
+}
+// Largura da planta na tela, para as linhas terem a mesma espessura em qualquer zoom
+function larguraBase(){
+  const w = document.getElementById('planta-wrap');
+  const base = w && !!w.closest('.cheia') === !!S.telaCheia ? w.clientWidth : (S.telaCheia ? innerWidth - 22 : Math.min(innerWidth - 48, 1040));
+  S.baseUsada = base; return base;
+}
+function meioDaLinha(P){
+  const seg = P.slice(1).map((p, i) => Math.hypot(p[0] - P[i][0], p[1] - P[i][1]));
+  let resta = seg.reduce((a, b) => a + b, 0) / 2;
+  for (let i = 0; i < seg.length; i++) { if (resta <= seg[i] || i === seg.length - 1) { const k = seg[i] ? Math.min(1, resta / seg[i]) : 0; return [P[i][0] + (P[i + 1][0] - P[i][0]) * k, P[i][1] + (P[i + 1][1] - P[i][1]) * k]; } resta -= seg[i]; }
+  return P[0];
+}
+const centroDe = P => [P.reduce((s, p) => s + p[0], 0) / P.length, P.reduce((s, p) => s + p[1], 0) / P.length];
+function selo(x, y, txt, cor, s){
+  const w = 12 + txt.length * 7.5;
+  return `<g transform="translate(${x.toFixed(1)} ${y.toFixed(1)}) scale(${s.toFixed(4)})" pointer-events="none"><rect x="${-w / 2}" y="-11" width="${w}" height="22" rx="11" fill="${cor}" stroke="#fff" stroke-width="2"/><text text-anchor="middle" y="4.5" font-size="13" font-weight="600" fill="#fff" font-family="Onest, system-ui, sans-serif">${esc(txt)}</text></g>`;
+}
+function elementoSVG(e, m, cfg){
+  const { W, H, s, modo } = cfg, u = px => (px * s).toFixed(2);
+  const cor = m.cor || CORES[0], fraco = !!m.fraco, t = tipoEl(e.tipo);
+  const sel = !fraco && modo !== 'geral' && S.selEl === e.id;
+  const P = (e.pts || []).map(p => [p[0] * W, p[1] * H]);
+  if (!P.length) return '';
+  const q = Number(e.qtd) || 0;
+  let g = '';
+  if (t.forma === 'linha' || t.forma === 'area') {
+    const tag = t.forma === 'area' ? 'polygon' : 'polyline', pts = P.map(p => p[0].toFixed(1) + ',' + p[1].toFixed(1)).join(' ');
+    // traço tracejado usa ponta reta, senão a ponta redonda tampa o espaço entre os painéis
+    const L = (stroke, w, extra = '') => `<${tag} points="${pts}" fill="none" stroke="${stroke}" stroke-width="${u(w)}" stroke-linejoin="round" stroke-linecap="${t.forma === 'area' || extra.includes('dasharray') ? 'butt' : 'round'}" ${extra}/>`;
+    if (sel) g += L('#0a0a0a', 20, 'stroke-opacity=".2"');
+    if (t.forma === 'area') g += `<polygon points="${pts}" fill="${cor}" fill-opacity="${fraco ? .1 : .2}"/>`;
+    if (e.tipo === 'pranchao') g += L('#0a0a0a', 13) + L('#fff', 10) + L(cor, 10, `stroke-opacity=".6" stroke-dasharray="${u(9)} ${u(2)}"`);
+    else g += L('#fff', 10) + L(cor, 6, `stroke-dasharray="${u(11)} ${u(4)}"`);
+    g += `<${tag} points="${pts}" fill="${t.forma === 'area' ? 'transparent' : 'none'}" stroke="transparent" stroke-width="${u(24)}"/>`;
+    if (q && !fraco) { const [x, y] = t.forma === 'area' ? centroDe(P) : meioDaLinha(P); g += selo(x, y, String(q), cor, s); }
+  } else {
+    const [x, y] = P[0];
+    g += `<g transform="translate(${x.toFixed(1)} ${y.toFixed(1)}) scale(${s.toFixed(4)})"><circle r="20" fill="transparent"/>${marcador(e.tipo, cor, sel)}</g>`;
+    if (q > 1 && !fraco) g += selo(x + 15 * s, y - 15 * s, String(q), cor, s * .85);
+  }
+  const clicavel = !fraco && modo !== 'estatico' ? ` data-el="${esc(e.id)}" data-mid="${esc(m.id)}"` : '';
+  return `<g${clicavel}${fraco ? ' opacity=".4"' : ''}>${g}</g>`;
+}
+function desenhoSVG(cfg){
+  const { W, H, s, modo, lista } = cfg, u = px => (px * s).toFixed(2);
+  let out = lista.map(m => elementosDe(m.desenho).map(e => elementoSVG(e, m, cfg)).join('')).join('');
+  if (modo !== 'editar') return out;
+  const L = S.linhaAtual, t = tipoEl(S.ferramenta);
+  if (S.ferramenta && L.length) {
+    const area = t.forma === 'area';
+    const pts = L.map(p => (p[0] * W).toFixed(1) + ',' + (p[1] * H).toFixed(1)).join(' ');
+    out += `<${area && L.length >= 3 ? 'polygon' : 'polyline'} points="${pts}" fill="${area ? 'rgba(10,10,10,.08)' : 'none'}" stroke="#0a0a0a" stroke-width="${u(3)}" stroke-dasharray="${u(8)} ${u(5)}" stroke-linejoin="round" pointer-events="none"/>`;
+    out += L.map((p, i) => { const primeiro = area && i === 0; return `<circle cx="${(p[0] * W).toFixed(1)}" cy="${(p[1] * H).toFixed(1)}" r="${u(primeiro ? 10 : 6)}" fill="${primeiro ? '#fff' : '#0a0a0a'}" stroke="${primeiro ? '#0a0a0a' : '#fff'}" stroke-width="${u(primeiro ? 3 : 2)}" pointer-events="none"/>`; }).join('');
+  }
+  const sel = !S.ferramenta && elSelecionado();
+  if (sel) out += sel.pts.map((p, i) => `<circle class="alca" data-h="${i}" cx="${(p[0] * W).toFixed(1)}" cy="${(p[1] * H).toFixed(1)}" r="${u(11)}" fill="#fff" stroke="#0a0a0a" stroke-width="${u(2.5)}"/>`).join('');
+  return out;
+}
+let ultimaPlanta = null; // para redesenhar durante o arrasto de um ponto
+// modo: 'geral' (todas as montagens; tocar abre o modelo), 'ver' (um modelo), 'editar'
+function plantaHTML(nivel, lista, modo, titulo){
   const pl = S.plantas?.[nivel];
   if (!pl) return `<div class="planta-vazia">A planta do Nível ${nivel} ainda não foi enviada.${podeMudar() ? ' Envie em <b>Montagens → Plantas da arena</b>.' : ''}</div>`;
   const W = 1000, H = Math.round(1000 * pl.h / pl.w);
-  const pt = p => `${(p[0] * W).toFixed(1)},${(p[1] * H).toFixed(1)}`;
-  const desenhar = (d, cor, fraco) => [
-    ...(d?.linhas || []).map(l => `<polyline points="${l.map(pt).join(' ')}" fill="none" stroke="${cor}" stroke-width="${fraco ? 3 : 6}" stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke" opacity="${fraco ? .45 : .95}"/>`),
-    ...(d?.pontos || []).map(p => `<circle cx="${(p[0] * W).toFixed(1)}" cy="${(p[1] * H).toFixed(1)}" r="${fraco ? 6 : 9}" fill="${cor}" stroke="#fff" stroke-width="2" vector-effect="non-scaling-stroke" opacity="${fraco ? .5 : 1}"/>`),
-  ].join('');
-  let svg = lista.map(m => desenhar(m.desenho, m.cor || CORES[0], m.fraco)).join('');
-  if (editavel && S.linhaAtual.length) {
-    svg += `<polyline points="${S.linhaAtual.map(pt).join(' ')}" fill="none" stroke="#0a0a0a" stroke-width="4" stroke-dasharray="8 6" vector-effect="non-scaling-stroke"/>`;
-    svg += S.linhaAtual.map(p => `<circle cx="${(p[0] * W).toFixed(1)}" cy="${(p[1] * H).toFixed(1)}" r="6" fill="#0a0a0a" stroke="#fff" stroke-width="2" vector-effect="non-scaling-stroke"/>`).join('');
-  }
-  return `<div class="planta">
-    <div class="planta-ctrl">
-      <span class="small muted">Nível ${nivel}</span><span class="grow"></span>
+  const cfg = { W, H, modo, lista, s: 1000 / (larguraBase() * S.zoom) };
+  ultimaPlanta = cfg;
+  const ed = modo === 'editar', cheia = S.telaCheia, t = tipoEl(S.ferramenta), m = lista[lista.length - 1];
+  const ctrl = `<div class="planta-ctrl">
+      ${cheia ? `<span class="planta-tit grow">${esc(titulo || 'Planta')} · Nível ${nivel}</span>` : `<span class="small muted grow">Nível ${nivel}</span>`}
       <button class="ib" data-a="zoom" data-d="-1" title="Diminuir" ${S.zoom <= 1 ? 'disabled' : ''}>−</button>
       <span class="small muted" style="min-width:42px;text-align:center">${Math.round(S.zoom * 100)}%</span>
-      <button class="ib" data-a="zoom" data-d="1" title="Aumentar" ${S.zoom >= 4 ? 'disabled' : ''}>+</button>
-    </div>
+      <button class="ib" data-a="zoom" data-d="1" title="Aumentar" ${S.zoom >= ZMAX ? 'disabled' : ''}>+</button>
+      ${cheia ? `<button class="btn" data-a="tela-fechar">Fechar</button>` : `<button class="ib" data-a="tela-cheia" title="Abrir em tela cheia">⛶ Tela cheia</button>`}
+    </div>`;
+  let ferr = '', painel = '';
+  if (ed) {
+    const minPts = t.forma === 'area' ? 3 : 2;
+    const dica = S.ferramenta
+      ? `<span>${t.dica}</span>${t.forma !== 'ponto' && S.linhaAtual.length >= minPts ? `<button class="btn pri" data-a="linha-ok">Concluir ${t.nome.toLowerCase()}</button>` : ''}${S.linhaAtual.length ? `<button class="btn ghost" data-a="traco-cancelar">Cancelar traço</button>` : ''}${t.forma === 'ponto' ? '<span>Toque no botão de novo para parar.</span>' : ''}`
+      : `<span>Escolha o que marcar e toque na planta. Toque numa marcação para editar ou apagar; arraste as bolinhas para ajustar. Aproxime com + ou com dois dedos.</span>`;
+    ferr = `<div class="ferrs">${ORDEM_TIPOS.map(k => `<button class="btn ${S.ferramenta === k ? 'on' : ''}" data-a="ferr" data-v="${k}" aria-pressed="${S.ferramenta === k}">${iconeTipo(k, m.cor || CORES[0])}${TIPOS_EL[k].nome}</button>`).join('')}
+        <button class="btn ghost" data-a="desfazer">Desfazer</button>
+        <button class="btn ghost ${S.alinhar ? 'on' : ''}" data-a="alinhar" aria-pressed="${S.alinhar}" title="Deixa os traços retos (horizontal, vertical e 45°)">Alinhar retas</button>
+        <button class="btn ghost danger" data-a="limpar-des">${S.confirm === 'limpar-des' ? 'Apagar tudo mesmo?' : 'Limpar tudo'}</button></div>
+      <div class="dica">${dica}</div>`;
+    const e = elSelecionado();
+    if (e) {
+      const te = tipoEl(e.tipo), mats = (m.materiais || []).filter(x => String(x.nome || '').trim());
+      painel = `<div class="el-ed">
+        <div class="row"><span class="el-nome grow">${iconeTipo(e.tipo, m.cor || CORES[0])}${te.nome}</span><button class="btn" data-a="sel-el" data-v="">Pronto</button></div>
+        <div class="row" style="align-items:flex-end">
+          ${te.un ? `<label class="fld" style="flex:0 1 140px">${te.fem ? 'Quantas' : 'Quantos'} ${te.un[1]}<input type="number" min="0" inputmode="numeric" id="el-qtd" data-elf="qtd" value="${e.qtd ?? ''}" placeholder="0"></label>` : ''}
+          ${te.un && mats.length ? `<label class="fld" style="flex:1 1 200px">Conta no material<select id="el-mat" data-elf="mat"><option value="">Não contar</option>${mats.map(x => `<option value="${esc(x.id)}" ${e.mat === x.id ? 'selected' : ''}>${esc(matLabel(x))}</option>`).join('')}</select></label>` : ''}
+          <label class="fld" style="flex:1 1 220px">Observação<input type="text" id="el-nota" data-elf="nota" value="${esc(e.nota || '')}" placeholder="Ex.: capa virada para a rua"></label>
+        </div>
+        <div class="row"><button class="btn ghost danger" data-a="el-del">${S.confirm === 'el-del' ? 'Apagar mesmo?' : 'Apagar esta marcação'}</button></div>
+      </div>`;
+    }
+  } else if (modo === 'ver' && S.selEl) {
+    const e = elementosDe(m.desenho).find(x => x.id === S.selEl);
+    if (e) painel = `<div class="el-ed"><div class="row"><span class="el-nome grow">${iconeTipo(e.tipo, m.cor || CORES[0])}${tipoEl(e.tipo).nome}</span><button class="btn" data-a="sel-el" data-v="">Fechar</button></div>${descrEl(e, m) ? `<div>${descrEl(e, m)}</div>` : ''}</div>`;
+  }
+  const interativo = modo === 'geral' || modo === 'ver' || ed;
+  return `<div class="planta${cheia ? ' cheia' : ''}">
+    ${ctrl}${ferr}
     <div class="planta-wrap" id="planta-wrap"><div class="planta-in" style="width:${S.zoom * 100}%">
       <img src="api/arquivo/plantas/${esc(pl.arquivo)}" alt="Planta do Nível ${nivel} da Farmasi Arena" draggable="false">
-      <svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" ${editavel && S.ferramenta ? `data-a="planta-svg" class="desenhando"` : ''}>${svg}</svg>
+      <svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" ${interativo ? `data-a="planta-svg" data-modo="${modo}"` : ''} class="${ed && S.ferramenta ? 'desenhando' : ''}">${desenhoSVG(cfg)}</svg>
     </div></div>
+    ${painel}
   </div>`;
 }
+function descrEl(e, m){
+  const mat = e.mat && (m.materiais || []).find(x => x.id === e.mat);
+  return [qtdTxt(e) && `<b>${esc(qtdTxt(e))}</b>`, mat && esc(matLabel(mat)), e.nota && esc(e.nota)].filter(Boolean).join(' · ');
+}
+// Lista das marcações embaixo da planta
+function listaElementos(m){
+  const els = elementosDe(m.desenho);
+  if (!els.length) return '';
+  return `<ul class="els">${els.map(e => `<li><button class="el-li ${S.selEl === e.id ? 'on' : ''}" data-a="sel-el" data-v="${esc(e.id)}">${iconeTipo(e.tipo, m.cor || CORES[0])}<span class="grow"><b>${tipoEl(e.tipo).nome}</b>${descrEl(e, m) ? `<span class="small muted">${descrEl(e, m)}</span>` : ''}</span></button></li>`).join('')}</ul>`;
+}
+function legendaTipos(){
+  return `<div class="legenda-mont small muted">${ORDEM_TIPOS.map(k => `<span style="display:inline-flex;align-items:center;gap:6px">${iconeTipo(k, '#717784')}${TIPOS_EL[k].nome}</span>`).join('')}</div>`;
+}
+
+// Zoom que mantém parado o ponto (cx, cy) da tela
+function zoomEm(z, cx, cy){
+  z = Math.round(Math.min(ZMAX, Math.max(1, z)) * 100) / 100;
+  const w = document.getElementById('planta-wrap');
+  if (!w) { S.zoom = z; render(); return; }
+  const r = w.getBoundingClientRect();
+  if (cx == null) { cx = r.left + w.clientWidth / 2; cy = r.top + w.clientHeight / 2; }
+  const k = z / S.zoom, ox = cx - r.left, oy = cy - r.top;
+  const sx = (w.scrollLeft + ox) * k - ox, sy = (w.scrollTop + oy) * k - oy;
+  S.zoom = z; w.firstElementChild.style.width = z * 100 + '%';
+  w.scrollLeft = sx; w.scrollTop = sy;
+  render();
+}
+function abrirTelaCheia(){
+  S.telaCheia = true; render();
+  const d = document.documentElement;
+  if (d.requestFullscreen && !document.fullscreenElement) d.requestFullscreen().catch(() => {});
+}
+function fecharTelaCheia(){ S.telaCheia = false; if (document.fullscreenElement) document.exitFullscreen().catch(() => {}); render(); }
+document.addEventListener('fullscreenchange', () => { if (!document.fullscreenElement && S.telaCheia) { S.telaCheia = false; render(); } });
+document.addEventListener('keydown', ev => { if (ev.key === 'Escape' && S.telaCheia && !document.fullscreenElement) fecharTelaCheia(); });
+let tResize; window.addEventListener('resize', () => { clearTimeout(tResize); tResize = setTimeout(() => { if (document.getElementById('planta-wrap')) render(); }, 200); });
+// Pinça com dois dedos (e Ctrl + rolagem no computador)
+let pinca = null;
+app.addEventListener('touchstart', ev => {
+  const w = ev.target.closest?.('#planta-wrap'); if (!w || ev.touches.length !== 2) return;
+  const [a, b] = ev.touches, r = w.getBoundingClientRect();
+  const cx = (a.clientX + b.clientX) / 2 - r.left, cy = (a.clientY + b.clientY) / 2 - r.top;
+  pinca = { w, r, d0: Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY) || 1, z0: S.zoom, z: S.zoom, ax: w.scrollLeft + cx, ay: w.scrollTop + cy };
+}, { passive: true });
+app.addEventListener('touchmove', ev => {
+  if (!pinca || ev.touches.length !== 2) return;
+  ev.preventDefault();
+  const [a, b] = ev.touches, { w, r } = pinca;
+  const z = Math.min(ZMAX, Math.max(1, pinca.z0 * Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY) / pinca.d0));
+  const cx = (a.clientX + b.clientX) / 2 - r.left, cy = (a.clientY + b.clientY) / 2 - r.top;
+  w.firstElementChild.style.width = z * 100 + '%';
+  w.scrollLeft = pinca.ax * z / pinca.z0 - cx; w.scrollTop = pinca.ay * z / pinca.z0 - cy;
+  pinca.z = z;
+}, { passive: false });
+app.addEventListener('touchend', ev => {
+  if (!pinca || ev.touches.length >= 2) return;
+  S.zoom = Math.round(pinca.z * 100) / 100; pinca = null;
+  S.ignorarClique = true; setTimeout(() => { S.ignorarClique = false; }, 400);
+  render();
+});
+document.addEventListener('gesturestart', ev => { if (ev.target.closest?.('#planta-wrap')) ev.preventDefault(); });
+app.addEventListener('wheel', ev => {
+  if (!ev.ctrlKey || !ev.target.closest?.('#planta-wrap')) return;
+  ev.preventDefault(); zoomEm(S.zoom * Math.exp(-ev.deltaY * 0.01), ev.clientX, ev.clientY);
+}, { passive: false });
+// Arrastar as bolinhas da marcação selecionada
+let arrasto = null;
+app.addEventListener('pointerdown', ev => {
+  const h = ev.target.closest?.('.alca'); if (!h || !S.mEdit) return;
+  const e = elSelecionado(); if (!e) return;
+  ev.preventDefault();
+  arrasto = { svg: h.ownerSVGElement, e, i: +h.dataset.h, id: ev.pointerId, moveu: false };
+  try { arrasto.svg.setPointerCapture(ev.pointerId); } catch (_) {}
+});
+app.addEventListener('pointermove', ev => {
+  if (!arrasto || ev.pointerId !== arrasto.id) return;
+  const r = arrasto.svg.getBoundingClientRect();
+  arrasto.e.pts[arrasto.i] = [Math.min(1, Math.max(0, (ev.clientX - r.left) / r.width)), Math.min(1, Math.max(0, (ev.clientY - r.top) / r.height))].map(v => Math.round(v * 10000) / 10000);
+  arrasto.moveu = true;
+  if (ultimaPlanta) arrasto.svg.innerHTML = desenhoSVG(ultimaPlanta);
+});
+const soltar = ev => {
+  if (!arrasto || ev.pointerId !== arrasto.id) return;
+  arrasto = null; S.ignorarClique = true; setTimeout(() => { S.ignorarClique = false; }, 400);
+  render();
+};
+app.addEventListener('pointerup', soltar);
+app.addEventListener('pointercancel', soltar);
 
 function viewMontagens(){
   const adm = podeMudar();
@@ -884,8 +1160,8 @@ function viewMontagens(){
   <section class="panel panel-pad" style="display:flex;flex-direction:column;gap:12px">
     <div class="row"><h2 class="grow">Visão da planta</h2>
       <div class="filters">${[0, 1, 2, 3].map(n => `<button class="fchip" data-a="nivel-planta" data-v="${n}" aria-pressed="${S.nivelPlanta === n}">Nível ${n}</button>`).join('')}</div></div>
-    ${plantaHTML(S.nivelPlanta, doNivel, false)}
-    ${doNivel.length ? `<div class="legenda-mont">${doNivel.map(m => `<button class="link" data-a="go-mont-det" data-mid="${esc(m.id)}"><i class="dot" style="background:${m.cor || CORES[0]}"></i>${esc(m.titulo)}</button>`).join('')}</div>` : `<p class="small muted" style="margin:0">Nenhuma montagem desenhada no Nível ${S.nivelPlanta}.</p>`}
+    ${plantaHTML(S.nivelPlanta, doNivel, 'geral', 'Todas as montagens')}
+    ${doNivel.length ? `<div class="legenda-mont">${doNivel.map(m => `<button class="link" data-a="go-mont-det" data-mid="${esc(m.id)}"><i class="dot" style="background:${m.cor || CORES[0]}"></i>${esc(m.titulo)}</button>`).join('')}</div>${legendaTipos()}` : `<p class="small muted" style="margin:0">Nenhuma montagem desenhada no Nível ${S.nivelPlanta}.</p>`}
   </section>
   <section style="display:flex;flex-direction:column;gap:10px"><h2>Modelos</h2>${cards}</section>
   ${plantasAdm}
@@ -914,8 +1190,9 @@ function viewMontagem(){
         : `<p class="small muted" style="margin:10px 0 0">Nenhum material cadastrado.</p>`}
     </section>
     <section class="panel panel-pad" style="display:flex;flex-direction:column;gap:10px"><h2>Onde fica</h2>
-      ${plantaHTML(Number(m.nivel), [...(S.montagens || []).filter(o => o.id !== m.id && Number(o.nivel) === Number(m.nivel)).map(o => ({ ...o, fraco: true })), m], false)}
-      <p class="small muted" style="margin:0">Em destaque esta montagem; as outras do mesmo nível aparecem mais claras.</p></section>
+      ${plantaHTML(Number(m.nivel), [...(S.montagens || []).filter(o => o.id !== m.id && Number(o.nivel) === Number(m.nivel)).map(o => ({ ...o, fraco: true })), m], 'ver', m.titulo)}
+      <p class="small muted" style="margin:0">Em destaque esta montagem; as outras do mesmo nível aparecem mais claras. Toque numa marcação para ver os detalhes.</p>
+      ${listaElementos(m)}</section>
     ${ligados.length ? `<section class="panel panel-pad"><h2>Itens do ${ck ? 'checklist' : 'modelo'} ligados</h2><ul class="lig">${ligados.map(l => `<li><span class="small muted">${esc(l.onde)} · ${l.n}</span><br>${esc(l.texto)}</li>`).join('')}</ul></section>` : ''}`;
   }
   // modo edição (administrador)
@@ -944,20 +1221,14 @@ function viewMontagem(){
       <label class="fld">Capa<select id="mat-${esc(x.id)}-capa" data-mat="${esc(x.id)}" data-matf="capa">${[['com', 'Com capa'], ['sem', 'Sem capa'], ['', 'Não se aplica']].map(([v, l]) => `<option value="${v}" ${(x.capa || '') === v ? 'selected' : ''}>${l}</option>`).join('')}</select></label>
       <label class="fld" style="flex:0 1 90px">Qtd.<input type="number" min="0" inputmode="numeric" id="mat-${esc(x.id)}-qtd" data-mat="${esc(x.id)}" data-matf="qtd" value="${esc(x.qtd ?? '')}"></label>
       <button class="ib del" data-a="mat-del" data-v="${esc(x.id)}" title="Tirar material">✕</button>
+      ${(() => { const sd = somaDesenho(m, x.id); return sd ? `<div class="soma-des">No desenho: <b>${sd}</b>${Number(x.qtd) === sd ? ' · igual à quantidade' : ` <button class="link" data-a="mat-usar" data-v="${esc(x.id)}" style="color:var(--brand)">Usar ${sd} na quantidade</button>`}</div>` : ''; })()}
     </div>`).join('') || '<p class="small muted" style="margin:0">Nenhum material ainda.</p>'}
     <div><button class="link" data-a="mat-add">+ Adicionar grade / material</button></div>
   </section>
   <section class="panel panel-pad" style="display:flex;flex-direction:column;gap:10px">
     <h2>Desenho na planta</h2>
-    <div class="row">
-      <button class="btn ${S.ferramenta === 'linha' ? 'on' : ''}" data-a="ferr" data-v="linha">Linha de grade</button>
-      <button class="btn ${S.ferramenta === 'ponto' ? 'on' : ''}" data-a="ferr" data-v="ponto">Ponto</button>
-      ${S.ferramenta === 'linha' && S.linhaAtual.length >= 2 ? `<button class="btn pri" data-a="linha-ok">Concluir linha</button>` : ''}
-      <button class="btn ghost" data-a="desfazer">Desfazer</button>
-      <button class="btn ghost danger" data-a="limpar-des">Limpar desenho</button>
-    </div>
-    <p class="small muted" style="margin:0">${S.ferramenta === 'linha' ? 'Toque na planta ponto a ponto, seguindo o trajeto da grade. Depois toque em <b>Concluir linha</b>.' : S.ferramenta === 'ponto' ? 'Toque na planta onde fica a montagem.' : 'Escolha <b>Linha de grade</b> ou <b>Ponto</b> e toque na planta. Use + para aproximar.'}</p>
-    ${plantaHTML(Number(m.nivel), [m], true)}
+    ${plantaHTML(Number(m.nivel), [m], 'editar', m.titulo || 'Nova montagem')}
+    ${listaElementos(m)}
   </section>
   <div class="row">
     <button class="btn pri" data-a="mont-salvar">Salvar modelo</button>
@@ -968,33 +1239,36 @@ function viewMontagem(){
 }
 
 function abrirMontagem(mid, origem){
-  S.montId = mid; S.mEdit = false; S.mNovo = false; S.ferramenta = null; S.linhaAtual = []; S.zoom = 1;
+  S.montId = mid; S.mEdit = false; S.mNovo = false; limparDesenhoAtivo(); S.zoom = 1;
   S.voltar = origem === 'check' ? { view: 'check' } : { view: 'montagens' };
   S.view = 'montagem'; S.confirm = null; render(); window.scrollTo(0, 0);
 }
 function editarMontagem(novo){
   if (novo) {
     const usadas = new Set((S.montagens || []).map(m => m.cor));
-    S.mDraft = { id: 'm' + Date.now().toString(36) + uid(), titulo: '', nivel: S.nivelPlanta, descricao: '', cor: CORES.find(c => !usadas.has(c)) || CORES[0], fotos: [], materiais: [{ id: uid(), nome: 'Grade de contenção', material: 'ferro', capa: 'com', qtd: 0 }], desenho: { linhas: [], pontos: [] }, criadoEm: Date.now() };
+    S.mDraft = { id: 'm' + Date.now().toString(36) + uid(), titulo: '', nivel: S.nivelPlanta, descricao: '', cor: CORES.find(c => !usadas.has(c)) || CORES[0], fotos: [], materiais: [{ id: uid(), nome: 'Grade de contenção', material: 'ferro', capa: 'com', qtd: 0 }], desenho: { elementos: [] }, criadoEm: Date.now() };
     S.montId = S.mDraft.id; S.voltar = { view: 'montagens' }; S.view = 'montagem';
   } else {
     const m = montagem(S.montId); if (!m) return;
-    S.mDraft = clone(m); S.mDraft.desenho = S.mDraft.desenho || { linhas: [], pontos: [] };
+    S.mDraft = clone(m); S.mDraft.desenho = { elementos: clone(elementosDe(m.desenho)) };
   }
-  S.mNovo = !!novo; S.mEdit = true; S.ferramenta = null; S.linhaAtual = []; S.zoom = 1; S.confirm = null;
+  S.mNovo = !!novo; S.mEdit = true; limparDesenhoAtivo(); S.zoom = 1; S.confirm = null;
   render(); window.scrollTo(0, 0);
 }
 function salvarMontagem(){
   const d = clone(S.mDraft);
   if (!String(d.titulo || '').trim()) { toast('Dê um nome para a montagem'); return; }
-  if (S.linhaAtual.length >= 2) d.desenho.linhas.push(S.linhaAtual);
+  // traço não concluído entra junto
+  const t = tipoEl(S.ferramenta);
+  if (S.ferramenta && t.forma !== 'ponto' && S.linhaAtual.length >= (t.forma === 'area' ? 3 : 2)) d.desenho.elementos.push({ id: uid(), tipo: S.ferramenta, pts: S.linhaAtual, qtd: null, mat: matPadrao(S.ferramenta), nota: '' });
+  d.desenho = { elementos: (d.desenho.elementos || []).map(e => ({ id: e.id, tipo: e.tipo, pts: e.pts, qtd: e.qtd == null || e.qtd === '' ? null : Math.max(0, Math.round(Number(e.qtd) || 0)), mat: e.mat || '', nota: String(e.nota || '').trim() })) };
   d.titulo = d.titulo.trim(); d.nivel = Number(d.nivel) || 0;
   d.materiais = (d.materiais || []).map(x => ({ ...x, nome: String(x.nome || '').trim(), qtd: Math.max(0, Math.round(Number(x.qtd) || 0)) }));
   d.atualizadoEm = Date.now();
   const { id, ...corpo } = d;
   const novo = S.mNovo;
   S.montagens = [...(S.montagens || []).filter(m => m.id !== id), { id, ...corpo }];
-  S.mEdit = false; S.mNovo = false; S.ferramenta = null; S.linhaAtual = [];
+  S.mEdit = false; S.mNovo = false; limparDesenhoAtivo();
   gravar('montagens/' + id, () => db.doc('montagens/' + id).set(corpo)).then(() => toast(novo ? 'Modelo criado' : 'Modelo salvo'));
   render(); window.scrollTo(0, 0);
 }
@@ -1038,11 +1312,40 @@ async function enviarPlanta(n, file){
     toast('Planta do Nível ' + n + ' enviada');
   } catch (e) { toast(e.message || 'Não foi possível enviar a planta'); }
 }
+const arred = p => p.map(v => Math.round(Math.min(1, Math.max(0, v)) * 10000) / 10000);
+// Endireita o traço quando ele está quase na horizontal, na vertical ou a 45°
+function alinharPonto(a, p, r){
+  const dx = (p[0] - a[0]) * r.width, dy = (p[1] - a[1]) * r.height;
+  const ang = Math.atan2(dy, dx), passo = Math.PI / 4, alvo = Math.round(ang / passo) * passo;
+  if (Math.abs(ang - alvo) > 7 * Math.PI / 180) return p;
+  const len = dx * Math.cos(alvo) + dy * Math.sin(alvo);
+  return [a[0] + len * Math.cos(alvo) / r.width, a[1] + len * Math.sin(alvo) / r.height];
+}
 function cliqueNaPlanta(ev, svg){
-  const r = svg.getBoundingClientRect();
-  const p = [Math.min(1, Math.max(0, (ev.clientX - r.left) / r.width)), Math.min(1, Math.max(0, (ev.clientY - r.top) / r.height))].map(v => Math.round(v * 10000) / 10000);
-  if (S.ferramenta === 'ponto') S.mDraft.desenho.pontos.push(p);
-  else if (S.ferramenta === 'linha') S.linhaAtual.push(p);
+  if (S.ignorarClique) { S.ignorarClique = false; return; }
+  const r = svg.getBoundingClientRect(), modo = svg.dataset.modo;
+  let p = [(ev.clientX - r.left) / r.width, (ev.clientY - r.top) / r.height];
+  if (modo === 'editar' && S.ferramenta && S.mDraft) {
+    const t = tipoEl(S.ferramenta);
+    if (t.forma === 'ponto') {
+      const e = { id: uid(), tipo: S.ferramenta, pts: [arred(p)], qtd: S.ferramenta === 'portico' ? 1 : null, mat: matPadrao(S.ferramenta), nota: '' };
+      S.mDraft.desenho.elementos.push(e); S.selEl = e.id; render(); return;
+    }
+    const L = S.linhaAtual;
+    if (t.forma === 'area' && L.length >= 3 && Math.hypot((p[0] - L[0][0]) * r.width, (p[1] - L[0][1]) * r.height) < 18) { concluirTraco(); return; }
+    if (S.alinhar && L.length) p = alinharPonto(L[L.length - 1], p, r);
+    L.push(arred(p)); render(); return;
+  }
+  const alvo = ev.target.closest('[data-el]');
+  if (modo === 'geral') { if (alvo) abrirMontagem(alvo.dataset.mid, 'montagens'); return; }
+  S.selEl = alvo ? alvo.dataset.el : null; S.confirm = null; render();
+}
+function concluirTraco(){
+  const tipo = S.ferramenta, t = tipoEl(tipo), L = S.linhaAtual;
+  if (!S.mDraft || t.forma === 'ponto' || L.length < (t.forma === 'area' ? 3 : 2)) return;
+  const e = { id: uid(), tipo, pts: L, qtd: null, mat: matPadrao(tipo), nota: '' };
+  S.mDraft.desenho.elementos.push(e);
+  S.linhaAtual = []; S.ferramenta = null; S.selEl = e.id;
   render();
 }
 
