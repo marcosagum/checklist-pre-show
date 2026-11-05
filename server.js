@@ -14,10 +14,11 @@ const SENHA_ADMIN = process.env.SENHA_ADMIN || '';
 const COLECOES = new Set(['config', 'checklists', 'montagens']);
 const LIMITE_CORPO = 1024 * 1024;
 const LIMITE_ARQUIVO = 10 * 1024 * 1024;
+const LIMITE_MAPA = 25 * 1024 * 1024; // mapa das barricadas pode vir em PDF grande
 // Fotos e plantas ficam no volume, nunca no repositório (que é público)
-const PASTAS = { fotos: path.join(DADOS_DIR, 'fotos'), plantas: path.join(DADOS_DIR, 'plantas') };
+const PASTAS = { fotos: path.join(DADOS_DIR, 'fotos'), plantas: path.join(DADOS_DIR, 'plantas'), mapas: path.join(DADOS_DIR, 'mapas') };
 const TIPOS = { 'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp' };
-const MIME = { jpg: 'image/jpeg', png: 'image/png', webp: 'image/webp' };
+const MIME = { jpg: 'image/jpeg', png: 'image/png', webp: 'image/webp', pdf: 'application/pdf' };
 
 // ---------- dados ----------
 fs.mkdirSync(DADOS_DIR, { recursive: true });
@@ -128,10 +129,10 @@ function lerCorpo(req) {
   });
 }
 
-function lerBinario(req) {
+function lerBinario(req, limite = LIMITE_ARQUIVO) {
   return new Promise((ok, falha) => {
     let tam = 0; const partes = [];
-    req.on('data', p => { tam += p.length; if (tam > LIMITE_ARQUIVO) { falha({ status: 413 }); req.destroy(); } else partes.push(p); });
+    req.on('data', p => { tam += p.length; if (tam > limite) { falha({ status: 413 }); req.destroy(); } else partes.push(p); });
     req.on('end', () => ok(Buffer.concat(partes)));
     req.on('error', () => falha({ status: 400 }));
   });
@@ -201,11 +202,14 @@ const servidor = http.createServer(async (req, res) => {
     }
 
     // Ver uma foto ou planta (qualquer senha)
-    const ma = p.match(/^\/api\/arquivo\/(fotos|plantas)\/([a-z0-9-]{1,80}\.(?:jpg|png|webp))$/);
+    const ma = p.match(/^\/api\/arquivo\/(fotos|plantas|mapas)\/([a-z0-9-]{1,80}\.(?:jpg|png|webp|pdf))$/);
     if (ma && req.method === 'GET') {
+      const ext = ma[2].split('.').pop();
+      if (ext === 'pdf' && ma[1] !== 'mapas') return json(res, 404, { erro: 'Arquivo não encontrado' });
       const arq = path.join(PASTAS[ma[1]], ma[2]);
       if (!fs.existsSync(arq)) return json(res, 404, { erro: 'Arquivo não encontrado' });
-      res.writeHead(200, { 'content-type': MIME[ma[2].split('.').pop()], 'cache-control': 'private, max-age=604800, immutable' });
+      res.writeHead(200, { 'content-type': MIME[ext], 'x-content-type-options': 'nosniff', 'cache-control': 'private, max-age=604800, immutable',
+        ...(ext === 'pdf' ? { 'content-disposition': 'inline; filename="mapa-barricadas.pdf"' } : {}) });
       return fs.createReadStream(arq).pipe(res);
     }
     // Enviar foto de montagem (só administrador). O nome é novo a cada envio, então o cache nunca fica velho.
@@ -217,6 +221,19 @@ const servidor = http.createServer(async (req, res) => {
       if (!ehImagem(buf, ext)) return json(res, 400, { erro: 'O arquivo não é uma imagem válida' });
       const nome = crypto.randomBytes(10).toString('hex') + '.' + ext;
       fs.writeFileSync(path.join(PASTAS.fotos, nome), buf);
+      return json(res, 200, { arquivo: nome });
+    }
+    // Enviar mapa das barricadas de uma montagem (só administrador): PDF ou imagem
+    if (p === '/api/mapas' && req.method === 'POST') {
+      if (papel !== 'admin') return json(res, 403, { erro: 'Só o administrador pode enviar o mapa' });
+      const tipo = (req.headers['content-type'] || '').split(';')[0];
+      const ext = tipo === 'application/pdf' ? 'pdf' : TIPOS[tipo];
+      if (!ext) return json(res, 400, { erro: 'Envie um PDF ou uma imagem JPG, PNG ou WEBP' });
+      const buf = await lerBinario(req, LIMITE_MAPA);
+      const valido = ext === 'pdf' ? buf.slice(0, 5).toString() === '%PDF-' : ehImagem(buf, ext);
+      if (!valido) return json(res, 400, { erro: ext === 'pdf' ? 'O arquivo não é um PDF válido' : 'O arquivo não é uma imagem válida' });
+      const nome = crypto.randomBytes(10).toString('hex') + '.' + ext;
+      fs.writeFileSync(path.join(PASTAS.mapas, nome), buf);
       return json(res, 200, { arquivo: nome });
     }
     // Trocar a planta de um nível (só administrador)

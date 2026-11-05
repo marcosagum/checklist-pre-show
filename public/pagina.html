@@ -202,6 +202,10 @@ body.sem-rolagem{overflow:hidden}
 .soma-des{flex-basis:100%;font-size:12px;color:var(--muted);display:flex;flex-wrap:wrap;gap:4px 10px;align-items:center}
 .planta-vazia{padding:28px 18px;text-align:center;color:var(--muted);border:1px dashed var(--line);border-radius:var(--r-field)}
 .fotos{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px;margin-top:10px}
+.mapas{display:flex;flex-direction:column;gap:8px;margin-top:10px}
+.mapa{display:flex;align-items:center;gap:12px;padding:8px;border:1px solid var(--line);border-radius:var(--r-field);background:var(--chip);color:inherit;text-decoration:none;min-height:44px}
+.mapa .mini{flex:none;width:64px;height:48px;border-radius:6px;background:var(--brand) center/cover no-repeat;color:#fff;display:grid;place-items:center;font-weight:700;font-size:12px}
+.mapa .nm{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .fotos img{display:block;width:100%;aspect-ratio:4/3;object-fit:cover;border-radius:var(--r-field);background:var(--chip)}
 .foto-ed{position:relative}
 .foto-ed .ib{position:absolute;top:6px;right:6px;background:var(--card)}
@@ -507,7 +511,7 @@ function itemRow(ck, it, idx, ro){
     <span class="num">${idx + 1}</span>
     <div style="min-width:0">
       <div class="txt">${esc(it.texto)} ${it.nota ? `<span class="nota">${esc(it.nota)}</span>` : ''}</div>
-      ${it.montagem && montagem(it.montagem) ? (() => { const m = montagem(it.montagem); return `<button class="mont-chip" data-a="go-mont-det" data-mid="${esc(m.id)}"><i class="dot" style="background:${m.cor || CORES[0]}"></i>Ver montagem · ${esc(resumoMont(m, ck))}${(m.fotos || []).length ? ` · ${m.fotos.length} foto${m.fotos.length === 1 ? '' : 's'}` : ''}</button>`; })() : ''}
+      ${it.montagem && montagem(it.montagem) ? (() => { const m = montagem(it.montagem); return `<button class="mont-chip" data-a="go-mont-det" data-mid="${esc(m.id)}"><i class="dot" style="background:${m.cor || CORES[0]}"></i>Ver montagem · ${esc(resumoMont(m, ck))}${(m.fotos || []).length ? ` · ${m.fotos.length} foto${m.fotos.length === 1 ? '' : 's'}` : ''}${(m.mapas || []).length ? ' · mapa' : ''}</button>`; })() : ''}
       ${aberta && !ro
         ? `<input type="text" class="obs-in" id="${obsId}" data-iid="${esc(it.id)}" placeholder="Observação deste show (ex.: 78 grades)" value="${esc(obs)}">`
         : (obs ? `<button class="obs-t" data-a="obs" data-iid="${esc(it.id)}" ${ro ? 'disabled' : ''} title="Toque para editar a observação"><span>obs: ${esc(obs)}</span>${ro ? '' : '<svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16v4zM14 6l4 4" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"/></svg>'}</button>` : '')}
@@ -640,6 +644,7 @@ app.addEventListener('click', ev => {
     case 'cor': S.mDraft.cor = b.dataset.v; render(); break;
     case 'mat-add': S.mDraft.materiais = [...(S.mDraft.materiais || []), { id: uid(), nome: 'Grade de contenção', material: 'ferro', capa: 'com', qtd: 0 }]; render(); break;
     case 'mat-del': S.mDraft.materiais = (S.mDraft.materiais || []).filter(x => x.id !== b.dataset.v); render(); break;
+    case 'mapa-del': { if (precisaConfirmar(b.dataset.k)) return; S.mDraft.mapas = (S.mDraft.mapas || []).filter(x => x.arquivo !== b.dataset.v); render(); break; }
     case 'foto-del': { if (precisaConfirmar(b.dataset.k)) return; S.mDraft.fotos = (S.mDraft.fotos || []).filter(f => f !== b.dataset.v); render(); break; }
     case 'mat-usar': { const x = (S.mDraft.materiais || []).find(y => y.id === b.dataset.v); if (x) x.qtd = somaDesenho(S.mDraft, x.id); render(); break; }
     case 'ferr': S.ferramenta = S.ferramenta === b.dataset.v ? null : b.dataset.v; S.linhaAtual = []; S.selEl = null; render(); break;
@@ -737,6 +742,7 @@ app.addEventListener('change', ev => {
   }
   if (el.id === 'obs-geral') { clearTimeout(obsTimers[el.id]); salvarObsGeral(el.value).then(() => { delete S.draft['obs-geral']; }); return; }
   // montagens
+  if (el.id === 'mapa-in') { const fs = [...el.files]; el.value = ''; enviarMapas(fs); return; }
   if (el.id === 'foto-in') { const fs = [...el.files]; el.value = ''; enviarFotos(fs); return; }
   if (el.dataset.planta) { const f = el.files[0]; el.value = ''; if (f) enviarPlanta(el.dataset.planta, f); return; }
   if (el.dataset.mf && S.mDraft) { S.mDraft[el.dataset.mf] = el.dataset.mf === 'nivel' ? +el.value : el.value; if (el.dataset.mf === 'nivel') { S.linhaAtual = []; render(); } return; }
@@ -866,6 +872,17 @@ function baixar(){
 const CORES = ['#e11518', '#1d4ed8', '#15803d', '#b45309', '#7c3aed', '#0e7490', '#be185d', '#4d7c0f'];
 const NOMES_GRADE = ['Grade de contenção', 'Grade de fechamento', 'Barricada', 'Gradil', 'Unifila', 'Pranchão', 'Pórtico'];
 const fotoUrl = nome => 'api/arquivo/fotos/' + encodeURIComponent(nome);
+const mapaUrl = nome => 'api/arquivo/mapas/' + encodeURIComponent(nome);
+const ehPdf = nome => /\.pdf$/i.test(nome || '');
+// Mapa das barricadas: arquivo pronto (PDF ou imagem) anexado ao modelo de montagem
+function mapaHTML(x, ed){
+  const pdf = ehPdf(x.arquivo), k = 'mapa-' + x.arquivo;
+  const mini = `<span class="mini" style="${pdf ? '' : `background-image:url('${mapaUrl(x.arquivo)}')`}">${pdf ? 'PDF' : ''}</span>`;
+  const nome = `<span class="nm">${esc(x.nome || (pdf ? 'Mapa em PDF' : 'Mapa'))}</span>`;
+  if (!ed) return `<a class="mapa" href="${mapaUrl(x.arquivo)}" target="_blank" rel="noopener">${mini}${nome}<span class="small" style="color:var(--brand)">Abrir</span></a>`;
+  return `<div class="mapa"><a href="${mapaUrl(x.arquivo)}" target="_blank" rel="noopener" style="display:contents;color:inherit">${mini}${nome}</a>
+    <button class="ib del ${S.confirm === k ? 'confirm' : ''}" data-a="mapa-del" data-v="${esc(x.arquivo)}" data-k="${esc(k)}" title="Tirar mapa">${S.confirm === k ? 'Tirar?' : '✕'}</button></div>`;
+}
 const montagem = id => (S.montagens || []).find(m => m.id === id);
 const montagensOrdenadas = () => [...(S.montagens || [])].sort((a, b) => (a.nivel - b.nivel) || String(a.titulo).localeCompare(String(b.titulo), 'pt-BR'));
 function matLabel(m){
@@ -1234,6 +1251,7 @@ function viewMontagem(){
       <div class="muted">Nível ${m.nivel}${ligados.length ? ` · ligado a ${ligados.length} ${ligados.length === 1 ? 'item' : 'itens'} do ${ck ? 'checklist' : 'modelo'}` : ''}</div></div>
     ${m.descricao ? `<section class="panel panel-pad"><h2>Como montar</h2><p style="margin:10px 0 0;white-space:pre-wrap">${esc(m.descricao)}</p></section>` : ''}
     ${(m.fotos || []).length ? `<section class="panel panel-pad"><h2>Fotos</h2><div class="fotos">${m.fotos.map((f, i) => `<a href="${fotoUrl(f)}" target="_blank" rel="noopener"><img src="${fotoUrl(f)}" alt="Foto ${i + 1} de ${esc(m.titulo)}" loading="lazy"></a>`).join('')}</div></section>` : ''}
+    ${(m.mapas || []).length ? `<section class="panel panel-pad"><h2>Mapa das barricadas</h2><div class="mapas">${m.mapas.map(x => mapaHTML(x, false)).join('')}</div></section>` : ''}
     <section class="panel panel-pad"><h2>Material</h2>
       ${(m.materiais || []).length ? `<table class="mat"><thead><tr><th class="q">${ck ? 'Neste show' : 'Qtd.'}</th><th>Grade / material</th>${ck ? `<th class="q">${adm ? 'Ajustar' : ''}</th>` : ''}</tr></thead><tbody>${linhasMat}</tbody></table>
         ${ck && adm ? `<p class="small muted" style="margin:8px 0 0">Deixe "Ajustar" vazio para usar a quantidade padrão do modelo. O ajuste vale só para ${esc(ck.evento)}.</p>` : ''}`
@@ -1261,6 +1279,12 @@ function viewMontagem(){
     <h2>Fotos</h2>
     <div class="fotos">${(m.fotos || []).map((f, i) => `<div class="foto-ed"><img src="${fotoUrl(f)}" alt="Foto ${i + 1}"><button class="ib del ${S.confirm === 'foto-' + f ? 'confirm' : ''}" data-a="foto-del" data-v="${esc(f)}" data-k="foto-${esc(f)}" title="Tirar foto">${S.confirm === 'foto-' + f ? 'Tirar?' : '✕'}</button></div>`).join('')}
       <label class="foto-add">${S.enviando ? `Enviando ${S.enviando}…` : '+ Adicionar fotos'}<input type="file" accept="image/*" multiple id="foto-in" hidden></label></div>
+  </section>
+  <section class="panel panel-pad" style="display:flex;flex-direction:column;gap:12px">
+    <h2>Mapa das barricadas</h2>
+    <p class="small muted" style="margin:-6px 0 0">O mapa que você recebe pronto, em PDF ou imagem. Fica junto deste modelo para a equipe abrir.</p>
+    <div class="mapas" style="margin:0">${(m.mapas || []).map(x => mapaHTML(x, true)).join('')}
+      <label class="foto-add" style="aspect-ratio:auto;min-height:48px">${S.enviandoMapa ? `Enviando ${S.enviandoMapa}…` : '+ Adicionar mapa (PDF ou imagem)'}<input type="file" accept="application/pdf,.pdf,image/*" multiple id="mapa-in" hidden></label></div>
   </section>
   <section class="panel panel-pad" style="display:flex;flex-direction:column;gap:10px">
     <h2>Material</h2>
@@ -1323,7 +1347,7 @@ function abrirMontagem(mid, origem){
 function editarMontagem(novo){
   if (novo) {
     const usadas = new Set((S.montagens || []).map(m => m.cor));
-    S.mDraft = { id: 'm' + Date.now().toString(36) + uid(), titulo: '', nivel: S.nivelPlanta, descricao: '', cor: CORES.find(c => !usadas.has(c)) || CORES[0], fotos: [], materiais: [{ id: uid(), nome: 'Grade de contenção', material: 'ferro', capa: 'com', qtd: 0 }], desenho: { elementos: [] }, criadoEm: Date.now() };
+    S.mDraft = { id: 'm' + Date.now().toString(36) + uid(), titulo: '', nivel: S.nivelPlanta, descricao: '', cor: CORES.find(c => !usadas.has(c)) || CORES[0], fotos: [], mapas: [], materiais: [{ id: uid(), nome: 'Grade de contenção', material: 'ferro', capa: 'com', qtd: 0 }], desenho: { elementos: [] }, criadoEm: Date.now() };
     S.montId = S.mDraft.id; S.voltar = { view: 'montagens' }; S.view = 'montagem';
   } else {
     const m = montagem(S.montId); if (!m) return;
@@ -1378,6 +1402,20 @@ async function enviarFotos(files){
       if (S.mDraft) { S.mDraft.fotos = [...(S.mDraft.fotos || []), arquivo]; }
     } catch (e) { toast(e.message || 'Não foi possível enviar a foto'); }
     S.enviando--; render();
+  }
+}
+async function enviarMapas(files){
+  for (const f of files) {
+    S.enviandoMapa = (S.enviandoMapa || 0) + 1; render();
+    try {
+      const pdf = f.type === 'application/pdf' || /\.pdf$/i.test(f.name);
+      // PDF vai do jeito que veio; imagem é reduzida, mas com folga para ler o mapa
+      const blob = pdf ? new Blob([f], { type: 'application/pdf' }) : (await reduzir(f, 3200, 'image/jpeg', 0.9)).blob;
+      const { arquivo } = await enviarArquivo('POST', 'api/mapas', blob);
+      const nome = String(f.name || '').replace(/\.[a-z0-9]{2,5}$/i, '').trim().slice(0, 80) || 'Mapa das barricadas';
+      if (S.mDraft) S.mDraft.mapas = [...(S.mDraft.mapas || []), { arquivo, nome }];
+    } catch (e) { toast(e.message || 'Não foi possível enviar o mapa'); }
+    S.enviandoMapa--; render();
   }
 }
 async function enviarPlanta(n, file){
